@@ -79,4 +79,13 @@ public class JwtService {
         return ((Number) extractClaim(token, claims -> claims.get("userId"))).longValue();
     }
 
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey())
+                .compact();
+    }
+
 }

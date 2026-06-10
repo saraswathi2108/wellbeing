@@ -5,14 +5,18 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.TimeZone;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 @Data
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Users {
 	
 	@Id
@@ -24,7 +28,10 @@ public class Users {
 	private Integer age;
 	private String role;
 	private String gender;
-	private String primaryRole;
+
+    @Enumerated(EnumType.STRING)
+	private PrimaryRole primaryRole;
+
 	private LocalDateTime wakeUpTime;
 	private TimeZone timeZone;
 	private LocalDateTime createdAt;
