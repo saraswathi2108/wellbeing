@@ -22,7 +22,7 @@ public class Activities {
 	private String activityName;
 	
 	private ActivityType activityType;
-	private String activityPercentage;
+	private Integer activityPercentage;
 	private Boolean status;
 	private LocalDateTime createdAt;
 	
