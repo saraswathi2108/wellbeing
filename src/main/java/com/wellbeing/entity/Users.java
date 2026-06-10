@@ -2,10 +2,12 @@ package com.wellbeing.entity;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.TimeZone;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 
 
@@ -26,4 +28,7 @@ public class Users {
 	private LocalDateTime wakeUpTime;
 	private TimeZone timeZone;
 	private LocalDateTime createdAt;
+
+	@OneToMany(mappedBy = "user")
+	private List<UserSubscription> userSubscriptions;
 }
