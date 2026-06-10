@@ -15,6 +15,6 @@ public class Tips {
     private String tipName;
     private String tipDescription;
     private Boolean status;
-    private String tipScore;
+    private Integer tipScore;
 
 }
