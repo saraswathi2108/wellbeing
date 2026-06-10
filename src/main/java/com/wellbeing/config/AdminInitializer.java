@@ -33,6 +33,7 @@ public class AdminInitializer implements CommandLineRunner {
 			Users users = new Users();
 			users.setId(userId);
 			users.setEmail("admin@wellbeing.com");
+			users.setPassword(passwordEncoder.encode("admin@123"));
 			users.setName("admin");
 			users.setAge(10);
 			users.setGender("male");
@@ -40,7 +41,8 @@ public class AdminInitializer implements CommandLineRunner {
 			users.setWakeUpTime(LocalDateTime.now());
 			users.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
 			users.setCreatedAt(LocalDateTime.now());
-			users.setPassword(passwordEncoder.encode("admin@123"));
+			
+			userRepository.save(users);
 						
 			log.info("Default admin created");
 		}
