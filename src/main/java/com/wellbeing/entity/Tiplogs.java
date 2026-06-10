@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class Tiplogs {
 
     @Id
-    private Long tipLogId;
+    private String tipLogId;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

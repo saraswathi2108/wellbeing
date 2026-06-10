@@ -12,7 +12,7 @@ import java.util.List;
 public class WellbeingScore {
 
     @Id
-    private Long wellScoreId;
+    private String wellScoreId;
 
     @OneToOne
     @JoinColumn(name = "user_id")

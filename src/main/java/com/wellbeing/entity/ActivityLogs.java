@@ -26,7 +26,7 @@ public class ActivityLogs {
 	
 	private LocalDateTime createdAt;
 	
-	private String scoreChange;
+	private Integer scoreChange;
 	
 
 }

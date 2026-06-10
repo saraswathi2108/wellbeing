@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class ScoreHistory {
 
     @Id
-    private Long scoreHistoryId;
+    private String scoreHistoryId;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

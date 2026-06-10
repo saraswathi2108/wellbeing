@@ -12,9 +12,9 @@ public class Tips {
 
     @Id
     private String tipId;
-
     private String tipName;
     private String tipDescription;
     private Boolean status;
+    private String tipScore;
 
 }
