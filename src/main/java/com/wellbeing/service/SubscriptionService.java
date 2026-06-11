@@ -3,7 +3,7 @@ package com.wellbeing.service;
 import com.wellbeing.dto.SubscriptionRequest;
 import com.wellbeing.dto.SubscriptionResponse;
 import com.wellbeing.entity.Subscription;
-import com.wellbeing.repository.SubscriptionRespository;
+import com.wellbeing.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SubscriptionService {
 
-    private final SubscriptionRespository subscriptionRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     public SubscriptionResponse createSubscription(
             SubscriptionRequest request) {

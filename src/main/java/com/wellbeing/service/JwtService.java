@@ -19,13 +19,13 @@ import java.util.function.Function;
 public class JwtService {
 
     // Minimum 256-bit hex key (Use env variables in real production)
-	@Value("${jwt.expiration}")
-	private long jwtExpiration;
-	
-	@Value("${jwt.secret}")
-	private String SECRET_KEY;
-	
-	
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
+
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
+
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -41,11 +41,11 @@ public class JwtService {
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         return Jwts.builder()
-                .claims(extraClaims) 
-                .subject(userDetails.getUsername()) 
-                .issuedAt(new Date(System.currentTimeMillis())) 
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration)) 
-                .signWith(getSignInKey()) 
+                .claims(extraClaims)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey())
                 .compact();
     }
 
@@ -64,17 +64,17 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSignInKey()) 
+                .verifyWith(getSignInKey())
                 .build()
-                .parseSignedClaims(token) 
-                .getPayload(); 
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes); // Returns SecretKey directly
     }
-    
+
     public Long extractUserId(String token) {
         return ((Number) extractClaim(token, claims -> claims.get("userId"))).longValue();
     }

@@ -29,8 +29,8 @@ public class AuthController {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final AuthService authService;
-	
-	
+
+
 	@PostMapping("/login")
 	    public String loginUser(@RequestBody LoginDto dto) {
 	        authenticationManager.authenticate(
@@ -39,16 +39,16 @@ public class AuthController {
 	                        dto.getPassword()
 	                )
 	        );
-	
+
 	        UserDetails userDetails = userDetailsService.loadUserByUsername(dto.getEmail());
-	        
+
 	        Users user = userRepository.findByEmail(dto.getEmail())
 	                .orElseThrow(() -> new RuntimeException("User not found after successful authentication"));
-	        
+
 	        Map<String, Object> extraClaims = new HashMap<>();
 	        extraClaims.put("role", userDetails.getAuthorities());
 	        extraClaims.put("userId", user.getId());
-	        
+
 	        log.info("User logged in Succesfully: {}", dto.getEmail());
 	        return jwtService.generateToken(extraClaims, userDetails);
 	    }
