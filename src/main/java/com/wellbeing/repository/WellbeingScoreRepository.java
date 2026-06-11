@@ -1,6 +1,5 @@
 package com.wellbeing.repository;
 
-import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.Users;
 import com.wellbeing.entity.WellbeingScore;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,5 +13,5 @@ public interface WellbeingScoreRepository extends JpaRepository<WellbeingScore, 
     Optional<WellbeingScore> findByUserId(String id);
 
 	Optional<WellbeingScore> findByUser(Users user);
-
+//jjj
 }
