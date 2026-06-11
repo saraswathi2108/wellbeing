@@ -1,7 +1,6 @@
 package com.wellbeing.controller;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.wellbeing.dto.LoginDto;
@@ -26,28 +25,33 @@ public class AuthController {
 	
 //	private final AuthService authService;
     private final AuthenticationManager authenticationManager;
-//    private final com.wellbeing.service.CustomUserDetailsService userDetailsService;
+    private final com.wellbeing.service.CustomUserDetailsService userDetailsService;
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final AuthService authService;
 
 
 	@PostMapping("/login")
-	public String loginUser(@RequestBody LoginDto dto) {
-		authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
-		);
+	    public String loginUser(@RequestBody LoginDto dto) {
+	        authenticationManager.authenticate(
+	                new UsernamePasswordAuthenticationToken(
+	                        dto.getEmail(),
+	                        dto.getPassword()
+	                )
+	        );
 
-		Users user = userRepository.findByEmail(dto.getEmail())
-				.orElseThrow(() -> new RuntimeException("User not found"));
+	        UserDetails userDetails = userDetailsService.loadUserByUsername(dto.getEmail());
 
-		Map<String, Object> extraClaims = new HashMap<>();
-		extraClaims.put("role", List.of("ROLE_" + user.getRole()));
-		extraClaims.put("userId", user.getId());
+	        Users user = userRepository.findByEmail(dto.getEmail())
+	                .orElseThrow(() -> new RuntimeException("User not found after successful authentication"));
 
-		log.info("User logged in Successfully: {}", dto.getEmail());
-		return jwtService.generateToken(extraClaims, user.getEmail());
-	}
+	        Map<String, Object> extraClaims = new HashMap<>();
+	        extraClaims.put("role", userDetails.getAuthorities());
+	        extraClaims.put("userId", user.getId());
+
+	        log.info("User logged in Succesfully: {}", dto.getEmail());
+	        return jwtService.generateToken(extraClaims, userDetails);
+	    }
 
     @PostMapping("/register")
     public String register(@RequestBody UserRegisterDTO dto, @RequestParam String otp) {

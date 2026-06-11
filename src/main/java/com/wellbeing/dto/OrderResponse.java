@@ -7,7 +7,7 @@ public class OrderResponse {
 
     private String razorPayOrderId;
 
-    private Double amount;
+    private Integer amount;
 
     private String keyId;
 
