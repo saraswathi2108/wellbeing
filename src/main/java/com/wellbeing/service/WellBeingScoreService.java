@@ -1,5 +1,6 @@
 package com.wellbeing.service;
 
+import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.ApplyTipRequest;
 import com.wellbeing.dto.TipLogResponseDto;
 import com.wellbeing.dto.WellbeingScoreResponse;
@@ -36,7 +37,7 @@ public class WellBeingScoreService {
         WellbeingScore score = wellbeingScoreRepository
                 .findByUserId(userId)
                 .orElseThrow(() ->
-                        new RuntimeException("Wellbeing score not found for user: " + userId));
+                        new ResourceNotFoundException("Wellbeing score not found for user: " + userId));
 
         return WellbeingScoreResponse.builder()
                 .userId(score.getUser().getId())
@@ -50,11 +51,11 @@ public class WellBeingScoreService {
     public String applyTip(ApplyTipRequest request) {
 
         Tips tip = tipsRepository.findById(request.getTipId())
-                .orElseThrow(() -> new RuntimeException("Tip not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tip not found"));
 
         WellbeingScore score = wellbeingScoreRepository
                 .findByUserId(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("Score not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Score not found"));
 
         Integer currentScore =
                 score.getCurrentScore() == null ? 0 : score.getCurrentScore();

@@ -1,5 +1,6 @@
 package com.wellbeing.service;
 
+import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.TipsRequestDto;
 import com.wellbeing.dto.TipsResponseDto;
 import com.wellbeing.entity.Tips;
@@ -42,7 +43,7 @@ public class TipsService {
     public TipsResponseDto getTipById(String tipId) {
 
         Tips tip = tipsRepository.findById(tipId)
-                .orElseThrow(() -> new RuntimeException("Tip not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tip not found"));
 
         return mapToResponse(tip);
     }
@@ -52,7 +53,7 @@ public class TipsService {
             TipsRequestDto dto) {
 
         Tips tip = tipsRepository.findById(tipId)
-                .orElseThrow(() -> new RuntimeException("Tip not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tip not found"));
 
         tip.setTipName(dto.getTipName());
         tip.setTipDescription(dto.getTipDescription());
@@ -67,7 +68,7 @@ public class TipsService {
     public String deleteTip(String tipId) {
 
         Tips tip = tipsRepository.findById(tipId)
-                .orElseThrow(() -> new RuntimeException("Tip not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tip not found"));
 
         tipsRepository.delete(tip);
 

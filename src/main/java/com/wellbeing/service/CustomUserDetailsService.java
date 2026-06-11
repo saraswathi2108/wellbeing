@@ -27,7 +27,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
 
-        // Blind spot fixed: Ippudu ID kooda pass chestunnam
         return new CustomUserDetails(
                 user.getId(), 
                 user.getEmail(),

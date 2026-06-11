@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.wellbeing.ExceptionHandler.ConflictException;
+import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
+import com.wellbeing.ExceptionHandler.UnauthorizedException;
 import com.wellbeing.dto.ActivityAddDto;
 import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
@@ -42,11 +45,11 @@ public class UserService {
 	public String addActivity(ActivityAddDto activityAddDto, String userId) {
 		
 		if (activityRepository.findByActivityName(activityAddDto.getActivityName()).isPresent()) {
-		    throw new RuntimeException("Activity already exists");
+		    throw new ConflictException("Activity already exists");
 		}
 		
 		Users user = userRepository.findById(userId)
-		        .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+		        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 		
 		Long count = activityRepository.count() + 1;
 		String activityId = String.format("ACTIVITY%05d", count);
@@ -73,14 +76,14 @@ public class UserService {
         
         // 1. Fetch User and Activity
         Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
                 
         Activities activity = activityRepository.findById(activityId)
-                .orElseThrow(() -> new RuntimeException("Activity not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found"));
 
         // User verification
         if (!activity.getUser().getId().equals(userId)) {
-            throw new RuntimeException("This activity does not belong to the user");
+            throw new UnauthorizedException("This activity does not belong to the user");
         }
 
         // 2. Calculate Score Change (Drain = minus, Recovery = plus)
@@ -154,7 +157,7 @@ public class UserService {
 		
 		// 1. User Validation
 		Users users = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User Not Found to get Activites"));
+				.orElseThrow(() -> new ResourceNotFoundException("User Not Found to get Activites"));
 
 		List<Activities> activities;
 		
@@ -182,7 +185,7 @@ public class UserService {
 	public String deleteActivity(String activityId, Boolean status) {
 		
 		Activities activities = activityRepository.findById(activityId)
-				.orElseThrow(() -> new RuntimeException("Activity Not Found to delete"));
+				.orElseThrow(() -> new ResourceNotFoundException("Activity Not Found to delete"));
 		
 		activities.setStatus(status);
 		
@@ -196,7 +199,7 @@ public class UserService {
 	public List<ActivityLogResponseDto> getRecentActivities(String userId) {
 		
 		userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User Not Found"));
+				.orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
 
 		return activityLogsRepository.findTop5ByUserIdOrderByCreatedAtDesc(userId)
 				.stream()
@@ -244,7 +247,7 @@ public class UserService {
 	public UserProfileDto getProfile(String userId) {
 		
 		Users users = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User Not Found to get Activites"));
+				.orElseThrow(() -> new ResourceNotFoundException("User Not Found to get Activites"));
 
 		
 		return UserProfileDto.builder()
@@ -264,7 +267,7 @@ public class UserService {
 	public String updateUserProfile(String userId, UserProfileDto dto) {
 		
 		Users user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		// Null checks: Frontend nunchi vachina data null kakapothe matrame update chey
 		if (dto.getName() != null) {

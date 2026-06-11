@@ -3,6 +3,10 @@ package com.wellbeing.service;
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.Utils;
+import com.wellbeing.ExceptionHandler.AlreadyExistsException;
+import com.wellbeing.ExceptionHandler.BadRequestException;
+import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
+import com.wellbeing.ExceptionHandler.UnauthorizedException;
 import com.wellbeing.config.SecurityUtil;
 import com.wellbeing.dto.CreateOrderRequest;
 import com.wellbeing.dto.OrderResponse;
@@ -36,16 +40,16 @@ public class PaymentService {
     public OrderResponse createOrder(CreateOrderRequest request) throws Exception {
         String userId = SecurityUtil.getCurrentUserId()
                 .orElseThrow(() ->
-                        new RuntimeException("User not authenticated"));
+                        new UnauthorizedException("User not authenticated"));
 
         Subscription subscription = subscriptionRepository.findById(request.getSubId())
-                        .orElseThrow(() -> new RuntimeException("Subscription not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Subscription not found"));
 
         if (!Boolean.TRUE.equals(subscription.getStatus())) {
-            throw new RuntimeException("Subscription is inactive");
+            throw new BadRequestException("Subscription is inactive");
         }
         UserSubscription userSubscription = userSubscriptionRepository.findByUserId(userId)
-                        .orElseThrow(() -> new RuntimeException("User subscription not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("User subscription not found"));
 
         RazorpayClient razorpay = new RazorpayClient(keyId, keySecret);
 
@@ -91,10 +95,10 @@ public class PaymentService {
     public String verifyPayment(VerifyPaymentRequest request) throws Exception {
 
         String userId = SecurityUtil.getCurrentUserId()
-                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+                .orElseThrow(() -> new UnauthorizedException("User not authenticated"));
 
         if (paymentRepository.findByRazorpayPaymentId(request.getRazorpayPaymentId()).isPresent()) {
-            throw new RuntimeException("Payment already verified");
+            throw new AlreadyExistsException("Payment already verified");
         }
 
         boolean validSignature = Utils.verifySignature(
@@ -105,15 +109,15 @@ public class PaymentService {
                         keySecret);
 
         if (!validSignature) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Invalid payment signature");
         }
 
         Subscription subscription = subscriptionRepository.findById(request.getSubId())
-                        .orElseThrow(() -> new RuntimeException("Subscription not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Subscription not found"));
 
         Payment payment = paymentRepository.findByRazorpayOrderId(request.getRazorpayOrderId())
-                        .orElseThrow(() -> new RuntimeException("Payment not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
         payment.setRazorpayPaymentId(request.getRazorpayPaymentId());
 
@@ -124,7 +128,7 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         UserSubscription userSubscription = userSubscriptionRepository.findByUserId(userId)
-                        .orElseThrow(() -> new RuntimeException("User subscription not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("User subscription not found"));
 
         userSubscription.setSubscription(subscription);
 
@@ -142,7 +146,7 @@ public class PaymentService {
     public void handlePaymentFailure(String razorpayOrderId) {
 
         Payment payment = paymentRepository.findByRazorpayOrderId(razorpayOrderId)
-                        .orElseThrow(() -> new RuntimeException("Payment not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
         if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
             payment.setPaymentStatus(PaymentStatus.FAILED);
