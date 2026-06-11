@@ -2,13 +2,18 @@ package com.wellbeing.service;
 
 import com.wellbeing.dto.UserRegisterDTO;
 import com.wellbeing.entity.Otp;
+import com.wellbeing.entity.UserSubscription;
+import com.wellbeing.entity.UserSubscriptionStatus;
 import com.wellbeing.entity.Users;
 import com.wellbeing.repository.OtpRepository;
 import com.wellbeing.repository.UserRepository;
+import com.wellbeing.repository.UserSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Random;
@@ -22,7 +27,8 @@ public class AuthService {
     private final OtpRepository otpRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final EmailService emailService; 
+    private final EmailService emailService; // Inject EmailService
+    private final UserSubscriptionRepository userSubscriptionRepository;
 
     public String sendRegistrationOtp(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
@@ -86,7 +92,31 @@ public class AuthService {
         user.setWakeUpTime(dto.getWakeUpTime());
         user.setCreatedAt(LocalDateTime.now());
 
-        userRepository.save(user);
-        return "User registered successfully";
+        Users savedUser = userRepository.save(user);
+        UserSubscription userSubscription =
+                new UserSubscription();
+
+        Long count1 =
+                userSubscriptionRepository.count() + 1;
+
+        String userSubId =
+                String.format("US%03d", count1);
+
+        userSubscription.setUserSubId(userSubId);
+
+        userSubscription.setUser(savedUser);
+
+        userSubscription.setStatus(
+                UserSubscriptionStatus.TRIAL);
+
+        userSubscription.setStartDate(LocalDate.now());
+
+        userSubscription.setEndDate(LocalDate.now().plusDays(7));
+
+        userSubscription.setSubscription(null);
+
+        userSubscriptionRepository.save(userSubscription);
+        return "user is created successfully";
+
     }
 }
