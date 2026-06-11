@@ -25,7 +25,7 @@ public class AdminController {
                 subscriptionService
                         .createSubscription(request));
     }
-    @GetMapping
+    @GetMapping("allSubscriptions")
     public ResponseEntity<List<SubscriptionResponse>> getAllSubscriptions() {
         return ResponseEntity.ok(subscriptionService.getAllSubscriptions());
     }

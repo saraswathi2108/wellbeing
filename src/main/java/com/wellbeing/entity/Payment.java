@@ -1,10 +1,7 @@
 package com.wellbeing.entity;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -19,17 +16,18 @@ public class Payment {
 
     private String razorpayOrderId;
 
-    private Double amount;
+    private String razorpayPaymentId;
 
+    private String razorpaySignature;
+
+    private Integer amount;
 
     private String paymentMethod;
 
-    private String paymentStatus;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
 
     private LocalDateTime paymentDate;
-//    /
-
-
 
     @ManyToOne
     @JoinColumn(name = "user_sub_id")
