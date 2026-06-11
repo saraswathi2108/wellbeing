@@ -3,7 +3,6 @@ package com.wellbeing.service;
 import java.util.Collections;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -25,10 +24,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         Users user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found in DB"));
 
-        // Converting DB Role to Spring Security SimpleGrantedAuthority
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
 
-        return new User(
+        // Blind spot fixed: Ippudu ID kooda pass chestunnam
+        return new CustomUserDetails(
+                user.getId(), 
                 user.getEmail(),
                 user.getPassword(),
                 Collections.singleton(authority)

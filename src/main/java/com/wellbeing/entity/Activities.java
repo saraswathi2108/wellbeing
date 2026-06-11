@@ -3,6 +3,8 @@ package com.wellbeing.entity;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -21,7 +23,9 @@ public class Activities {
 	
 	private String activityName;
 	
+	@Enumerated(EnumType.STRING)
 	private ActivityType activityType;
+	
 	private Integer activityPercentage;
 	private Boolean status;
 	private LocalDateTime createdAt;
