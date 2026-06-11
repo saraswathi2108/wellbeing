@@ -18,9 +18,11 @@ public class Tiplogs {
 
     @ManyToOne
     @JoinColumn(name = "tip_id")
-    private Tips tips;
+    private Tips tip;
+
+    private Integer scoreChange;
 
     private LocalDateTime appliedAt;
-    private Integer scoreChange;
+
 
 }
