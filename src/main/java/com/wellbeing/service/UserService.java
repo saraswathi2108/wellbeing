@@ -1,10 +1,12 @@
 package com.wellbeing.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import com.wellbeing.dto.ActivityAddDto;
+import com.wellbeing.dto.ActivityResponseDto;
 import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.ActivityLogs;
 import com.wellbeing.entity.ActivityType;
@@ -138,4 +140,16 @@ public class UserService {
 
         return "Activity logged successfully. Previous Score: " + previousScore + ", New Score: " + newScore;
     }
+
+
+
+	public List<ActivityResponseDto> getActities(ActivityType activityType, String userId) {
+		
+		Users users = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User Not Found to get Activites"));
+
+		List<Activities> activities = activityRepository.findByUserAndActivityType(userId, activityType);
+		
+		return null;
+	}
 }
