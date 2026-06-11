@@ -1,13 +1,19 @@
 package com.wellbeing.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.wellbeing.dto.ActivityAddDto;
 import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
+import com.wellbeing.dto.DailyActivityPercentageDto;
+import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.ActivityLogs;
 import com.wellbeing.entity.ActivityType;
@@ -195,12 +201,93 @@ public class UserService {
 		return activityLogsRepository.findTop5ByUserIdOrderByCreatedAtDesc(userId)
 				.stream()
 				.map(log -> ActivityLogResponseDto.builder()
-						.logId(log.getId())
+						.activityLogId(log.getId())
 						.activityName(log.getActivity().getActivityName())
 						.activityType(log.getActivity().getActivityType().name())
 						.scoreChange(log.getScoreChange())
 						.completedAt(log.getCreatedAt())
 						.build())
 				.toList();
+	}
+	
+	
+	public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String userId) {
+		
+		LocalDateTime endDate = LocalDateTime.now();
+		LocalDateTime startDate = endDate.minusDays(7); 
+
+		List<ActivityLogs> logs = activityLogsRepository.findByUserIdAndCreatedAtBetween(userId, startDate, endDate);
+
+		// 3. Date prakaram group chesi, aa roju chesina percentage add cheyi 
+        // (DRAIN aina RECOVERY aina percentage matram absolute value e untundi)
+		Map<LocalDate, Integer> dailyStats = logs.stream()
+				.collect(Collectors.groupingBy(
+						log -> log.getCreatedAt().toLocalDate(),
+						Collectors.summingInt(log -> Math.abs(log.getScoreChange())) 
+				));
+
+		// 4. Missing days cover chey (Frontend chart break avvakunda)
+		List<DailyActivityPercentageDto> result = new ArrayList<>();
+		for (int i = 6; i >= 0; i--) {
+			LocalDate date = endDate.minusDays(i).toLocalDate();
+			result.add(DailyActivityPercentageDto.builder()
+					.date(date)
+					.totalPercentage(dailyStats.getOrDefault(date, 0))
+					.build());
+		}
+
+		return result;
+	}
+
+
+
+	public UserProfileDto getProfile(String userId) {
+		
+		Users users = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User Not Found to get Activites"));
+
+		
+		return UserProfileDto.builder()
+				.userId(users.getId())
+				.name(users.getName())
+				.email(users.getEmail())
+				.age(users.getAge())
+				.gender(users.getGender())
+				.primaryRole(users.getPrimaryRole())
+				.wakeUpTime(users.getWakeUpTime())
+				.timeZone(users.getTimeZone())
+				.build();
+	}
+	
+	
+	
+	public String updateUserProfile(String userId, UserProfileDto dto) {
+		
+		Users user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		// Null checks: Frontend nunchi vachina data null kakapothe matrame update chey
+		if (dto.getName() != null) {
+			user.setName(dto.getName());
+		}
+		if (dto.getAge() != null) {
+			user.setAge(dto.getAge());
+		}
+		if (dto.getGender() != null) {
+			user.setGender(dto.getGender());
+		}
+		if (dto.getPrimaryRole() != null) {
+			user.setPrimaryRole(dto.getPrimaryRole());
+		}
+		if (dto.getWakeUpTime() != null) {
+			user.setWakeUpTime(dto.getWakeUpTime());
+		}
+		if (dto.getTimeZone() != null) {
+			user.setTimeZone(dto.getTimeZone());
+		}
+
+		userRepository.save(user);
+
+		return "Profile updated successfully";
 	}
 }

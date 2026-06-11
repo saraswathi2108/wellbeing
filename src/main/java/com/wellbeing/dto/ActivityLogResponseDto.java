@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ActivityLogResponseDto {
-    private String logId;
+    private String activityLogId;
     private String activityName;
     private String activityType;
     private Integer scoreChange;

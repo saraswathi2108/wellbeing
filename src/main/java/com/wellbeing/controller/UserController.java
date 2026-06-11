@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wellbeing.dto.ActivityAddDto;
 import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
+import com.wellbeing.dto.DailyActivityPercentageDto;
+import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.ActivityType;
 import com.wellbeing.service.CustomUserDetails;
 import com.wellbeing.service.UserService;
@@ -80,5 +82,33 @@ public class UserController {
 		String userId = currentUser.getId();
 		
 		return userService.getRecentActivities(userId);
+	}
+	
+	
+	@GetMapping("/activities/last-7-days")
+	public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(@AuthenticationPrincipal CustomUserDetails currentUser) {
+		
+		String userId = currentUser.getId();
+		
+		return userService.getLast7DaysActivityPercentage(userId);
+	}
+	
+	
+	@GetMapping("/profile")
+	public UserProfileDto getProfile(@AuthenticationPrincipal CustomUserDetails currentUser) {
+		
+		String userId = currentUser.getId();
+		return userService.getProfile(userId);
+	}
+	
+	
+	@PutMapping("/profile/update")
+	public String updateProfile(
+			@RequestBody UserProfileDto dto,
+			@AuthenticationPrincipal CustomUserDetails currentUser) {
+		
+		String userId = currentUser.getId();
+		
+		return userService.updateUserProfile(userId, dto);
 	}
 }
