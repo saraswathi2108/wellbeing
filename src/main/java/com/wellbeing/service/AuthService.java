@@ -1,5 +1,9 @@
 package com.wellbeing.service;
 
+import com.wellbeing.ExceptionHandler.AlreadyExistsException;
+import com.wellbeing.ExceptionHandler.BadRequestException;
+import com.wellbeing.ExceptionHandler.ForbiddenException;
+import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.UserRegisterDTO;
 import com.wellbeing.entity.Otp;
 import com.wellbeing.entity.UserSubscription;
@@ -32,7 +36,7 @@ public class AuthService {
 
     public String sendRegistrationOtp(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists.");
+            throw new AlreadyExistsException("Email already exists.");
         }
 
         String otpCode = String.valueOf(100000 + new Random().nextInt(900000));
@@ -55,22 +59,22 @@ public class AuthService {
 
     public String registerUser(UserRegisterDTO dto, String otpCode) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists.");
+            throw new AlreadyExistsException("Email already exists.");
         }
 
         // Fetch the latest OTP for this email and purpose
         Otp otp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(dto.getEmail(), "REGISTER")
-                .orElseThrow(() -> new RuntimeException("OTP not found. Please request a new one."));
+                .orElseThrow(() -> new ResourceNotFoundException("OTP not found. Please request a new one."));
 
         // Validate OTP
         if (otp.getVerified()) {
-            throw new RuntimeException("OTP has already been used.");
+            throw new BadRequestException("OTP has already been used.");
         }
         if (otp.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP has expired.");
+            throw new ForbiddenException("OTP has expired.");
         }
         if (!otp.getOtpCode().equals(otpCode)) {
-            throw new RuntimeException("Invalid OTP.");
+            throw new ForbiddenException("Invalid OTP.");
         }
 
         otp.setVerified(true);
@@ -117,6 +121,5 @@ public class AuthService {
 
         userSubscriptionRepository.save(userSubscription);
         return "user is created successfully";
-
     }
 }

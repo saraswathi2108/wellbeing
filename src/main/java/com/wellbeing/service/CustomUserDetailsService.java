@@ -2,6 +2,7 @@ package com.wellbeing.service;
 
 import java.util.Collections;
 
+import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -22,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Users user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found in DB"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found in DB"));
 
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
 
