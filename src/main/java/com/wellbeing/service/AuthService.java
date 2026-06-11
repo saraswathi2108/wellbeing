@@ -30,13 +30,11 @@ public class AuthService {
     private final EmailService emailService; // Inject EmailService
     private final UserSubscriptionRepository userSubscriptionRepository;
 
-    // Step 1: Method to generate, save, and send the OTP
     public String sendRegistrationOtp(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already exists.");
         }
 
-        // Generate a 6-digit OTP
         String otpCode = String.valueOf(100000 + new Random().nextInt(900000));
 
         // Save OTP to database
@@ -44,7 +42,7 @@ public class AuthService {
         otp.setEmail(email);
         otp.setOtpCode(otpCode);
         otp.setPurpose("REGISTER");
-        otp.setExpiresAt(LocalDateTime.now().plusMinutes(10)); // Valid for 10 mins
+        otp.setExpiresAt(LocalDateTime.now().plusMinutes(10)); 
         otp.setVerified(false);
         otpRepository.save(otp);
 
@@ -54,7 +52,7 @@ public class AuthService {
         return "OTP sent successfully to " + email;
     }
 
-    // Step 2: Update registerUser to verify the OTP first
+
     public String registerUser(UserRegisterDTO dto, String otpCode) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists.");
@@ -75,11 +73,9 @@ public class AuthService {
             throw new RuntimeException("Invalid OTP.");
         }
 
-        // Mark OTP as verified so it can't be reused
         otp.setVerified(true);
         otpRepository.save(otp);
 
-        // Proceed with user registration
         Long count = userRepository.count() + 1;
         String userId = String.format("USER%05d", count);
 

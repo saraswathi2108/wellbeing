@@ -68,6 +68,7 @@ public class SecurityConfig {
                             "/api/admin/**"
 
             		).permitAll()
+            		
                 .anyRequest().authenticated()                  
             )
             .sessionManagement(session -> session
