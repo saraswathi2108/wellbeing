@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.wellbeing.dto.ActivityAddDto;
+import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
 import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.ActivityLogs;
@@ -143,13 +144,63 @@ public class UserService {
 
 
 
-	public List<ActivityResponseDto> getActities(ActivityType activityType, String userId) {
+	public List<ActivityResponseDto> getActivities(ActivityType activityType, String userId) {
 		
+		// 1. User Validation
 		Users users = userRepository.findById(userId)
 				.orElseThrow(() -> new RuntimeException("User Not Found to get Activites"));
 
-		List<Activities> activities = activityRepository.findByUserAndActivityType(userId, activityType);
+		List<Activities> activities;
 		
-		return null;
+		if (activityType == null) {
+			activities = activityRepository.findByUserIdAndStatusTrue(userId);
+		} else {
+			activities = activityRepository.findByUserIdAndActivityTypeAndStatusTrue(userId, activityType);
+		}
+		
+		return activities.stream()
+				.map(act -> {
+				ActivityResponseDto dto = new ActivityResponseDto();
+				dto.setActivityId(act.getId());
+				dto.setActivityName(act.getActivityName());
+				dto.setActivityType(act.getActivityType());
+				dto.setActivityPercenage(act.getActivityPercentage()); 
+				dto.setStatus(act.getStatus());
+				dto.setCreatedAt(act.getCreatedAt());
+				return dto;
+			}).toList();
+	}
+
+
+
+	public String deleteActivity(String activityId, Boolean status) {
+		
+		Activities activities = activityRepository.findById(activityId)
+				.orElseThrow(() -> new RuntimeException("Activity Not Found to delete"));
+		
+		activities.setStatus(status);
+		
+		activityRepository.save(activities);
+
+		return "Activity deleted Succesfully";
+	}
+	
+	
+	
+	public List<ActivityLogResponseDto> getRecentActivities(String userId) {
+		
+		userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User Not Found"));
+
+		return activityLogsRepository.findTop5ByUserIdOrderByCreatedAtDesc(userId)
+				.stream()
+				.map(log -> ActivityLogResponseDto.builder()
+						.logId(log.getId())
+						.activityName(log.getActivity().getActivityName())
+						.activityType(log.getActivity().getActivityType().name())
+						.scoreChange(log.getScoreChange())
+						.completedAt(log.getCreatedAt())
+						.build())
+				.toList();
 	}
 }

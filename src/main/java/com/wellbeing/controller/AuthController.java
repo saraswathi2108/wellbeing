@@ -48,6 +48,7 @@ public class AuthController {
 	        Map<String, Object> extraClaims = new HashMap<>();
 	        extraClaims.put("role", userDetails.getAuthorities());
 	        extraClaims.put("userId", user.getId());
+	        extraClaims.put("name", user.getName());
 
 	        log.info("User logged in Succesfully: {}", dto.getEmail());
 	        return jwtService.generateToken(extraClaims, userDetails);
