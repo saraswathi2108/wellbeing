@@ -25,6 +25,11 @@ public class ScoreHistory {
     @ManyToOne
     @JoinColumn(name = "well_score_id")
     private WellbeingScore wellbeingScore;
+    
+    
+    @ManyToOne
+    @JoinColumn(name = "activity_id")
+    private Activities activitie;
 
     private LocalDateTime recordedAt;
 }
