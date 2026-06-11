@@ -16,7 +16,10 @@ public class ScoreHistory {
     @JoinColumn(name = "user_id")
     private Users user;
 
-    private Integer tipId;
+   // private String tipId;
+    @ManyToOne
+    @JoinColumn(name = "tip_id")
+    private Tips tips;
 
     private Integer previousScore;
 
