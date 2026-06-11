@@ -9,10 +9,7 @@ import com.wellbeing.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/payment")
@@ -25,18 +22,26 @@ public class PaymentController {
 
 
 
-
     @PostMapping("/create-order")
     public ResponseEntity<OrderResponse> createOrder(@RequestBody CreateOrderRequest request) throws Exception {
         return ResponseEntity.ok(paymentService.createOrder(request));
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<String> verifyPayment(
-            @RequestBody VerifyPaymentRequest request) throws Exception {
+    public ResponseEntity<String> verifyPayment(@RequestBody VerifyPaymentRequest request)
+            throws Exception {
+        return ResponseEntity.ok(paymentService.verifyPayment(request)
+        );
+    }
+    @PostMapping("/payment-failed")
+    public ResponseEntity<String> paymentFailed(
+            @RequestParam String razorpayOrderId) {
 
-        paymentService.verifyPayment(request);
-        return ResponseEntity.ok("Payment Verified");
+        paymentService.handlePaymentFailure(
+                razorpayOrderId);
+
+        return ResponseEntity.ok(
+                "Payment marked as failed");
     }
 
 
