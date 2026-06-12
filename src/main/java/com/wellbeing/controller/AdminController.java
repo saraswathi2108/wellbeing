@@ -30,4 +30,13 @@ public class AdminController {
         return ResponseEntity.ok(subscriptionService.getAllSubscriptions());
     }
 
+
+    @PostMapping("/activate-trial/{subId}")
+    public ResponseEntity<String> activateTrial(
+            @PathVariable String subId) {
+
+        return ResponseEntity.ok(
+                subscriptionService.activateTrial(subId));
+    }
+
 }
