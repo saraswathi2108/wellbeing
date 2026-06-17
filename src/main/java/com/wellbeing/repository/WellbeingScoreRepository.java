@@ -15,7 +15,5 @@ public interface WellbeingScoreRepository extends JpaRepository<WellbeingScore, 
 
     Optional<WellbeingScore> findByUserId(String id);
 
-//    qwertyu
 	Optional<WellbeingScore> findByUser(Users user);
-//jjj
 }
