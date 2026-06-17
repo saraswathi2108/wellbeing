@@ -27,8 +27,7 @@ import com.wellbeing.repository.ActivityLogsRepository;
 import com.wellbeing.repository.ActivityRepository;
 import com.wellbeing.repository.ScoreHistoryRepository;
 import com.wellbeing.repository.UserRepository;
-import com.wellbeing.repository.WellbeingScoreRepository;
-
+import com.wellbeing.repository.WellBeingScoreRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -39,7 +38,7 @@ public class UserService {
 	private final ActivityRepository activityRepository;
 	private final UserRepository userRepository;
 	private final ActivityLogsRepository activityLogsRepository;
-	private final WellbeingScoreRepository wellBeingScoreRepository;
+	private final WellBeingScoreRepository wellBeingScoreRepository;
 	private final ScoreHistoryRepository scoreHistoryRepository;
 
 	public String addActivity(ActivityAddDto activityAddDto, String userId) {

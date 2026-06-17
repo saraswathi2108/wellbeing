@@ -11,7 +11,7 @@ import com.wellbeing.entity.WellbeingScore;
 import com.wellbeing.repository.ScoreHistoryRepository;
 import com.wellbeing.repository.TipLogsRepository;
 import com.wellbeing.repository.TipsRepository;
-import com.wellbeing.repository.WellbeingScoreRepository;
+import com.wellbeing.repository.WellBeingScoreRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WellBeingScoreService {
 
-    private final WellbeingScoreRepository wellbeingScoreRepository;
+    private final WellBeingScoreRepository wellbeingScoreRepository;
     private final TipsRepository tipsRepository;
     private final ScoreHistoryRepository scoreHistoryRepository;
     private final TipLogsRepository tipLogsRepository;
