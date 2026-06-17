@@ -4,7 +4,6 @@ import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.ApplyTipRequest;
 import com.wellbeing.dto.TipLogResponseDto;
 import com.wellbeing.dto.WellbeingScoreResponse;
-import com.wellbeing.entity.ScoreHistory;
 import com.wellbeing.entity.Tiplogs;
 import com.wellbeing.entity.Tips;
 import com.wellbeing.entity.WellbeingScore;

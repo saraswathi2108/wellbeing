@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.wellbeing.repository.*;
 import org.springframework.stereotype.Service;
 
 import com.wellbeing.ExceptionHandler.ConflictException;
@@ -23,11 +24,6 @@ import com.wellbeing.entity.ActivityType;
 import com.wellbeing.entity.ScoreHistory;
 import com.wellbeing.entity.Users;
 import com.wellbeing.entity.WellbeingScore;
-import com.wellbeing.repository.ActivityLogsRepository;
-import com.wellbeing.repository.ActivityRepository;
-import com.wellbeing.repository.ScoreHistoryRepository;
-import com.wellbeing.repository.UserRepository;
-import com.wellbeing.repository.WellbeingScoreRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +38,8 @@ public class UserService {
 	private final WellbeingScoreRepository wellBeingScoreRepository;
 	private final ScoreHistoryRepository scoreHistoryRepository;
 
-	public String addActivity(ActivityAddDto activityAddDto, String userId) {
+	public String
+	addActivity(ActivityAddDto activityAddDto, String userId) {
 		
 		if (activityRepository.findByActivityName(activityAddDto.getActivityName()).isPresent()) {
 		    throw new ConflictException("Activity already exists");
