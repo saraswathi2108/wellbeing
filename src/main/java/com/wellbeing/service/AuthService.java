@@ -96,30 +96,8 @@ public class AuthService {
         user.setWakeUpTime(dto.getWakeUpTime());
         user.setCreatedAt(LocalDateTime.now());
 
-        Users savedUser = userRepository.save(user);
-        UserSubscription userSubscription =
-                new UserSubscription();
+        userRepository.save(user);
 
-        Long count1 =
-                userSubscriptionRepository.count() + 1;
-
-        String userSubId =
-                String.format("US%03d", count1);
-
-        userSubscription.setUserSubId(userSubId);
-
-        userSubscription.setUser(savedUser);
-
-        userSubscription.setStatus(
-                UserSubscriptionStatus.TRIAL);
-
-        userSubscription.setStartDate(LocalDate.now());
-
-        userSubscription.setEndDate(LocalDate.now().plusDays(7));
-
-        userSubscription.setSubscription(null);
-
-        userSubscriptionRepository.save(userSubscription);
-        return "user is created successfully";
+        return "User created successfully";
     }
 }

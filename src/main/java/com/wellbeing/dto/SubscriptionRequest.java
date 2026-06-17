@@ -9,4 +9,5 @@ public class SubscriptionRequest {
     private String subDescription;
     private Integer price;
     private Integer durationDays;
+    private Boolean trialPlan;
 }

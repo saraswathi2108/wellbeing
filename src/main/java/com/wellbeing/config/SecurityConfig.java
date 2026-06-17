@@ -64,12 +64,12 @@ public class SecurityConfig {
             		        "/v3/api-docs/**",
             		        "/v3/api-docs.yaml",
             		        "/swagger-resources/**",
-            		        "/webjars/**"
-//                            "/api/admin/**"
+            		        "/webjars/**",
+                            "/api/admin/**",
+                            "/api/banner/**"
 
             		).permitAll()
-                    .requestMatchers("/api/banner/**").hasRole("ADMIN")
-                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                 .anyRequest().authenticated()
 
             )

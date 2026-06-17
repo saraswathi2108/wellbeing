@@ -35,6 +35,8 @@ public class Users {
 	private LocalDateTime wakeUpTime;
 	private TimeZone timeZone;
 	private LocalDateTime createdAt;
+//	@Column(nullable = true)
+//	private Boolean trialUsed = false;
 
 	@OneToMany(mappedBy = "user")
 	private List<UserSubscription> userSubscriptions;

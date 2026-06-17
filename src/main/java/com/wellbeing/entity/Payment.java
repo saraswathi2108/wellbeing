@@ -32,4 +32,6 @@ public class Payment {
     @ManyToOne
     @JoinColumn(name = "user_sub_id")
     private UserSubscription userSubscription;
+
+
 }
