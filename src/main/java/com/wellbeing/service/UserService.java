@@ -285,9 +285,6 @@ public class UserService {
 		if (dto.getWakeUpTime() != null) {
 			user.setWakeUpTime(dto.getWakeUpTime());
 		}
-		if (dto.getTimeZone() != null) {
-			user.setTimeZone(dto.getTimeZone());
-		}
 
 		userRepository.save(user);
 
