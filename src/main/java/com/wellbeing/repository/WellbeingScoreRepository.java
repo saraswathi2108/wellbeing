@@ -17,3 +17,4 @@ public interface WellbeingScoreRepository extends JpaRepository<WellbeingScore, 
 
 	Optional<WellbeingScore> findByUser(Users user);
 }
+//rtyui
