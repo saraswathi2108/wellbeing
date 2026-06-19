@@ -29,6 +29,9 @@ public class UserProfileDto {
 
 	private LocalDateTime wakeUpTime;
 	private TimeZone timeZone;
+	private String phoneNo;
+	private String guardianName;
+	private String guardianPhoneNo;
 	
 
 }

@@ -95,6 +95,9 @@ public class AuthService {
         user.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
         user.setWakeUpTime(dto.getWakeUpTime());
         user.setCreatedAt(LocalDateTime.now());
+        user.setPhoneNo(dto.getPhoneNo());
+        user.setGuardianName(dto.getGuardianName());
+        user.setGuardianPhoneNo(dto.getGuardianPhoneNo());
 
         userRepository.save(user);
 

@@ -16,6 +16,7 @@ import com.wellbeing.dto.ActivityAddDto;
 import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
 import com.wellbeing.dto.DailyActivityPercentageDto;
+import com.wellbeing.dto.MostUsedActivitiesDto;
 import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.ActivityType;
 import com.wellbeing.service.CustomUserDetails;
@@ -110,5 +111,14 @@ public class UserController {
 		String userId = currentUser.getId();
 		
 		return userService.updateUserProfile(userId, dto);
+	}
+	
+	
+	
+	@GetMapping("/mostRecentActivity")
+	public MostUsedActivitiesDto getMostUsedActivities(@AuthenticationPrincipal CustomUserDetails currentUser) {
+		
+		String userId = currentUser.getId();
+		return userService.getMostUsedActivitiesForWeek(userId);
 	}
 }

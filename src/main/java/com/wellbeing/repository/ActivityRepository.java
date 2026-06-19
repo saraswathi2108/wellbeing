@@ -1,5 +1,6 @@
 package com.wellbeing.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +20,11 @@ public interface ActivityRepository extends JpaRepository<Activities, String> {
 	
 //	all activities
 	List<Activities> findByUserIdAndStatusTrue(String userId);
+	
+	
+	List<Activities> findByUserIdAndStatusTrueAndCreatedAtBetweenOrderByCreatedAtDesc(
+		    String userId, LocalDateTime start, LocalDateTime end);
+
+	List<Activities> findByUserIdAndActivityTypeAndStatusTrueAndCreatedAtBetweenOrderByCreatedAtDesc(
+		    String userId, ActivityType activityType, LocalDateTime start, LocalDateTime end);
 }

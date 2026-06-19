@@ -16,4 +16,7 @@ public class UserRegisterDTO {
     private PrimaryRole role;
     private  String Others;
     private LocalDateTime wakeUpTime;
+    private String phoneNo;
+    private String guardianName;
+    private String guardianPhoneNo;
 }

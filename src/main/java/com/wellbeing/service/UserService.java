@@ -2,11 +2,16 @@ package com.wellbeing.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 
 import com.wellbeing.ExceptionHandler.ConflictException;
@@ -16,6 +21,7 @@ import com.wellbeing.dto.ActivityAddDto;
 import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
 import com.wellbeing.dto.DailyActivityPercentageDto;
+import com.wellbeing.dto.MostUsedActivitiesDto;
 import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.ActivityLogs;
@@ -30,7 +36,11 @@ import com.wellbeing.repository.UserRepository;
 import com.wellbeing.repository.WellBeingScoreRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -41,6 +51,8 @@ public class UserService {
 	private final WellBeingScoreRepository wellBeingScoreRepository;
 	private final ScoreHistoryRepository scoreHistoryRepository;
 
+	
+	@Transactional
 	public String addActivity(ActivityAddDto activityAddDto, String userId) {
 		
 		if (activityRepository.findByActivityName(activityAddDto.getActivityName()).isPresent()) {
@@ -64,13 +76,15 @@ public class UserService {
 		newActivity.setUser(user); 
 
 		activityRepository.save(newActivity);
+		
+		logCompletedActivity(activityId, userId);
 
 		return "Activity Added Successfully with ID: " + activityId;
 	}
 	
 	
 	
-	@Transactional // Very Important: Idi lekapothe DB sagam corrupt avthundi
+	@Transactional
     public String logCompletedActivity(String activityId, String userId) {
         
         // 1. Fetch User and Activity
@@ -107,16 +121,14 @@ public class UserService {
         activityLog.setCreatedAt(LocalDateTime.now());
         activityLogsRepository.save(activityLog);
 
-        // 4. Fetch or Initialize WellbeingScore
+     // 4. Fetch or Initialize WellbeingScore
         WellbeingScore currentScoreObj = wellBeingScoreRepository.findByUser(user).orElse(null);
         int previousScore = 0;
-        
+                 
         if (currentScoreObj == null) {
-        	
-        	Long count2 = wellBeingScoreRepository.count() + 1;
-   		 
-    		String wellbeingscoreId = String.format("WELLBEING%05d", count);
-    		
+            Long count2 = wellBeingScoreRepository.count() + 1;
+            String wellbeingscoreId = String.format("WELLBEING%05d", count2);
+                 
             currentScoreObj = new WellbeingScore();
             currentScoreObj.setWellScoreId(wellbeingscoreId);
             currentScoreObj.setUser(user);
@@ -126,7 +138,9 @@ public class UserService {
         }
 
         // 5. Update WellbeingScore
-        int newScore = currentScoreObj.getCurrentScore() + scoreChange;
+        int calculatedScore = currentScoreObj.getCurrentScore() + scoreChange;
+        int newScore = Math.max(0, Math.min(100, calculatedScore)); 
+
         currentScoreObj.setCurrentScore(newScore);
         currentScoreObj.setUpdatedAt(LocalDateTime.now());
         wellBeingScoreRepository.save(currentScoreObj);
@@ -153,30 +167,51 @@ public class UserService {
 
 
 	public List<ActivityResponseDto> getActivities(ActivityType activityType, String userId) {
-		
-		// 1. User Validation
-		Users users = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User Not Found to get Activites"));
+	    
+	    // 1. User Validation
+	    Users users = userRepository.findById(userId)
+	            .orElseThrow(() -> new ResourceNotFoundException("User Not Found to get Activites"));
 
-		List<Activities> activities;
-		
-		if (activityType == null) {
-			activities = activityRepository.findByUserIdAndStatusTrue(userId);
-		} else {
-			activities = activityRepository.findByUserIdAndActivityTypeAndStatusTrue(userId, activityType);
-		}
-		
-		return activities.stream()
-				.map(act -> {
-				ActivityResponseDto dto = new ActivityResponseDto();
-				dto.setActivityId(act.getId());
-				dto.setActivityName(act.getActivityName());
-				dto.setActivityType(act.getActivityType());
-				dto.setActivityPercenage(act.getActivityPercentage()); 
-				dto.setStatus(act.getStatus());
-				dto.setCreatedAt(act.getCreatedAt());
-				return dto;
-			}).toList();
+	    // 2. Timezone specific today's boundaries calculation (Blind spot fixed)
+	    ZoneId istZone = ZoneId.of("Asia/Kolkata");
+	    LocalDateTime startOfDay = LocalDate.now(istZone).atStartOfDay();
+	    LocalDateTime endOfDay = LocalDate.now(istZone).atTime(LocalTime.MAX);
+
+	    List<Activities> activities;
+	    
+	    // 3. Fetch data based on today's timeframe
+	    if (activityType == null) {
+	        activities = activityRepository.findByUserIdAndStatusTrueAndCreatedAtBetweenOrderByCreatedAtDesc(
+	            userId, startOfDay, endOfDay
+	        );
+	    } else {
+	        activities = activityRepository.findByUserIdAndActivityTypeAndStatusTrueAndCreatedAtBetweenOrderByCreatedAtDesc(
+	            userId, activityType, startOfDay, endOfDay
+	        );
+	    }
+	    
+	    
+	    
+//	    List<Activities> activities;
+//		
+//		if (activityType == null) {
+//			activities = activityRepository.findByUserIdAndStatusTrue(userId);
+//		} else {
+//			activities = activityRepository.findByUserIdAndActivityTypeAndStatusTrue(userId, activityType);
+//		}
+	    
+	    // 4. Map to DTO
+	    return activities.stream()
+	            .map(act -> {
+	            ActivityResponseDto dto = new ActivityResponseDto();
+	            dto.setActivityId(act.getId());
+	            dto.setActivityName(act.getActivityName());
+	            dto.setActivityType(act.getActivityType());
+	            dto.setActivityPercenage(act.getActivityPercentage()); 
+	            dto.setStatus(act.getStatus());
+	            dto.setCreatedAt(act.getCreatedAt());
+	            return dto;
+	        }).toList();
 	}
 
 
@@ -199,8 +234,14 @@ public class UserService {
 		
 		userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
+		
+		// 2. Timezone specific today's boundaries calculation (Blind spot fixed)
+		
+	    ZoneId istZone = ZoneId.of("Asia/Kolkata");
+	    LocalDateTime startOfDay = LocalDate.now(istZone).atStartOfDay();
+	    LocalDateTime endOfDay = LocalDate.now(istZone).atTime(LocalTime.MAX);
 
-		return activityLogsRepository.findTop5ByUserIdOrderByCreatedAtDesc(userId)
+		return activityLogsRepository.findByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(userId, startOfDay, endOfDay)
 				.stream()
 				.map(log -> ActivityLogResponseDto.builder()
 						.activityLogId(log.getId())
@@ -258,6 +299,9 @@ public class UserService {
 				.primaryRole(users.getPrimaryRole())
 				.wakeUpTime(users.getWakeUpTime())
 				.timeZone(users.getTimeZone())
+				.phoneNo(users.getPhoneNo())
+				.guardianName(users.getGuardianName())
+				.guardianPhoneNo(users.getGuardianPhoneNo())
 				.build();
 	}
 	
@@ -284,9 +328,54 @@ public class UserService {
 		if (dto.getWakeUpTime() != null) {
 			user.setWakeUpTime(dto.getWakeUpTime());
 		}
+		if (dto.getPhoneNo() != null) {
+			user.setPhoneNo(dto.getPhoneNo());
+		}
+		if (dto.getGuardianName() != null) {
+			user.setGuardianName(dto.getGuardianName());
+		}
+		if (dto.getGuardianPhoneNo() != null) {
+			user.setGuardianPhoneNo(dto.getGuardianPhoneNo());
+		}
 
 		userRepository.save(user);
 
 		return "Profile updated successfully";
 	}
+	
+	
+	
+	@Scheduled(cron = "0 0 0 * * ?") // Daily midnight
+	@Transactional
+	public void wellBeingScheduler() {
+
+	    List<WellbeingScore> scores = wellBeingScoreRepository.findAll();
+
+	    scores.forEach(score -> score.setCurrentScore(100));
+
+	    wellBeingScoreRepository.saveAll(scores);
+
+	    log.info("Wellbeing scores reset successfully");
+	}
+	
+	
+	public MostUsedActivitiesDto getMostUsedActivitiesForWeek(String userId) {
+		
+	    ZoneId istZone = ZoneId.of("Asia/Kolkata");
+	    LocalDateTime startDate = LocalDateTime.now(istZone).minusDays(7);
+	    
+	    List<String> drainResult = activityLogsRepository.findMostUsedActivityTypeForUser(
+	        userId, ActivityType.DRAIN, startDate, PageRequest.of(0, 1)
+	    );
+	    
+	    List<String> recoveryResult = activityLogsRepository.findMostUsedActivityTypeForUser(
+	        userId, ActivityType.RECOVERY, startDate, PageRequest.of(0, 1)
+	    );
+
+	    return MostUsedActivitiesDto.builder()
+	        .mostUsedDrain(drainResult.isEmpty() ? "No Drain Activities Logged" : drainResult.get(0))
+	        .mostUsedRecovery(recoveryResult.isEmpty() ? "No Recovery Activities Logged" : recoveryResult.get(0))
+	        .build();
+	}
+	
 }

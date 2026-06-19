@@ -40,4 +40,8 @@ public class Users {
 
 	@OneToMany(mappedBy = "user")
 	private List<UserSubscription> userSubscriptions;
+	
+	private String phoneNo;
+	private String guardianName;
+	private String guardianPhoneNo;
 }
