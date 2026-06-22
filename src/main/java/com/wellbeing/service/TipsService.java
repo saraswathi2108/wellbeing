@@ -24,7 +24,7 @@ public class TipsService {
         tip.setTipId("TIP" + System.currentTimeMillis());
         tip.setTipName(dto.getTipName());
         tip.setTipDescription(dto.getTipDescription());
-        tip.setStatus(dto.getStatus());
+        tip.setStatus(true);
         tip.setTipScore(dto.getTipScore());
 
         Tips savedTip = tipsRepository.save(tip);
