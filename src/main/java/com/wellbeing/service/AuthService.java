@@ -4,7 +4,10 @@ import com.wellbeing.ExceptionHandler.AlreadyExistsException;
 import com.wellbeing.ExceptionHandler.BadRequestException;
 import com.wellbeing.ExceptionHandler.ForbiddenException;
 import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
+import com.wellbeing.dto.ChangePasswordDTO;
+import com.wellbeing.dto.ResetPasswordDTO;
 import com.wellbeing.dto.UserRegisterDTO;
+import com.wellbeing.dto.VerifyOtpDTO;
 import com.wellbeing.entity.Otp;
 import com.wellbeing.entity.UserSubscription;
 import com.wellbeing.entity.UserSubscriptionStatus;
@@ -13,6 +16,8 @@ import com.wellbeing.repository.OtpRepository;
 import com.wellbeing.repository.UserRepository;
 import com.wellbeing.repository.UserSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +28,8 @@ import java.time.ZonedDateTime;
 import java.util.Random;
 import java.util.TimeZone;
 
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -103,4 +110,93 @@ public class AuthService {
 
         return "User created successfully";
     }
+
+
+    public String sendForgetOtp(String email) {
+        
+        if (!userRepository.existsByEmail(email)) {
+            throw new ResourceNotFoundException("User not found with this email");
+        }
+
+        otpRepository.findByEmailAndVerifiedFalse(email).ifPresent(existingOtp -> {
+            existingOtp.setVerified(true);
+            otpRepository.save(existingOtp);
+        });
+
+        String generatedOtp = String.format("%06d", new Random().nextInt(999999));
+        
+        Otp otp = new Otp();
+        otp.setEmail(email);
+        otp.setOtpCode(generatedOtp);
+        otp.setPurpose("FORGET_PASSWORD");
+        otp.setExpiresAt(LocalDateTime.now().plusMinutes(10)); 
+        otp.setVerified(false);
+        otpRepository.save(otp);
+
+        emailService.sendOtpEmail(email, generatedOtp);
+        
+        log.info("Forget Otp sent to email: {}", email);
+        return "OTP sent to your email successfully.";
+    }
+
+
+	public String verifyOtp(VerifyOtpDTO dto) {
+		
+		Otp otp = otpRepository.findByEmailAndVerifiedFalseAndPurpose(dto.getEmail(), "FORGET_PASSWORD")
+                .orElseThrow(() -> new BadRequestException("No active OTP found. Please request a new one."));
+		
+		log.info("db otp {}", otp.getOtpCode());
+		log.info("DTO otp {}", dto.getOtp());
+		
+		if(!dto.getOtp().equals(otp.getOtpCode())) {
+			throw new BadRequestException("Invalid OTP");
+		}
+		
+		if (otp.getExpiresAt().isBefore(LocalDateTime.now())) {
+            otp.setVerified(true);
+            otpRepository.save(otp);
+            throw new BadRequestException("OTP has expired. Please request a new one.");
+        }
+
+		otp.setVerified(true);
+        otpRepository.save(otp);
+        
+        log.info("Successfully otp verified");
+        return "OTP Verified Successfully. You can now reset your password.";
+	}
+
+
+	public String resetpassword(ResetPasswordDTO resetPasswordDTO) {
+		
+		Users user = userRepository.findByEmail(resetPasswordDTO.getEmail())
+				.orElseThrow(() -> new ResourceNotFoundException("User Not found to reset new password"));
+		
+		user.setPassword(passwordEncoder.encode(resetPasswordDTO.getNewPassword()));
+
+		userRepository.save(user);
+		
+        return "Password reset successful! You can now login.";
+
+	}
+
+
+	public String changePassword(ChangePasswordDTO changePasswordDTO, String userId) {
+		
+		Users user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
+		
+		if(!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {
+			throw new BadRequestException("Current password that you entered is incorrect.");
+		}
+		
+		if(passwordEncoder.matches(changePasswordDTO.getNewPassword(), user.getPassword())) {
+			throw new BadRequestException("New password must be different from the current password.");
+		}
+		
+		user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+		userRepository.save(user);
+
+		log.info("password has been reset successfully");
+		return "Password updated successfully for User: "+ user.getEmail();
+	}
 }

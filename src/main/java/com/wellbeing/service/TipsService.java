@@ -3,7 +3,9 @@ package com.wellbeing.service;
 import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.TipsRequestDto;
 import com.wellbeing.dto.TipsResponseDto;
+import com.wellbeing.entity.TipCategory;
 import com.wellbeing.entity.Tips;
+import com.wellbeing.repository.CategoryTipRepo;
 import com.wellbeing.repository.TipsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,25 +18,33 @@ import java.util.UUID;
 public class TipsService {
 
     private final TipsRepository tipsRepository;
+    private final CategoryTipRepo categoryTipRepo;
 
-    public TipsResponseDto createTip(TipsRequestDto dto) {
+    public String createTip(TipsRequestDto dto, Long categoryTipId) {
+    	
+    	TipCategory tipCategory = categoryTipRepo.findById(categoryTipId)
+    			.orElseThrow(() -> new ResourceNotFoundException("CategoryTip not found to add Tip"));
 
         Tips tip = new Tips();
+        
+        Long count = tipsRepository.count() + 1;
+		String tipId = String.format("TIPS%05d", count);
 
-        tip.setTipId("TIP" + System.currentTimeMillis());
+		tip.setTipId(tipId);
         tip.setTipName(dto.getTipName());
         tip.setTipDescription(dto.getTipDescription());
         tip.setStatus(true);
+        tip.setTipCategory(tipCategory);
         tip.setTipScore(dto.getTipScore());
 
         Tips savedTip = tipsRepository.save(tip);
 
-        return mapToResponse(savedTip);
+        return "Tip added Succesfully";
     }
 
-    public List<TipsResponseDto> getAllTips() {
+    public List<TipsResponseDto> getByCatId(Long categoryId, boolean status) {
 
-        return tipsRepository.findAll()
+        return tipsRepository.findByStatusAndTipCategory_Id(status, categoryId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -76,13 +86,14 @@ public class TipsService {
     }
 
     private TipsResponseDto mapToResponse(Tips tip) {
-
         return TipsResponseDto.builder()
                 .tipId(tip.getTipId())
                 .tipName(tip.getTipName())
                 .tipDescription(tip.getTipDescription())
                 .status(tip.getStatus())
                 .tipScore(tip.getTipScore())
+                .categoryId(tip.getTipCategory() != null ? tip.getTipCategory().getId() : null)
+                .categoryName(tip.getTipCategory() != null ? tip.getTipCategory().getCategoryName() : null)
                 .build();
     }
 }

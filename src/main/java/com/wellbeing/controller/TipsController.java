@@ -23,16 +23,18 @@ public class TipsController {
     private final TipsService tipsService;
 //    private final AiRecommendationService aiRecommendationService;
 
-    @PostMapping
-    public TipsResponseDto createTip(
-            @RequestBody TipsRequestDto dto) {
+    @PostMapping("/add")
+    public String createTip(
+            @RequestBody TipsRequestDto dto,
+            @RequestParam Long categoryId) {
 
-        return tipsService.createTip(dto);
+        return tipsService.createTip(dto, categoryId);
     }
 
-    @GetMapping
-    public List<TipsResponseDto> getAllTips() {
-        return tipsService.getAllTips();
+    @GetMapping("/byCategory")
+    public List<TipsResponseDto> getTipsByCateId(@RequestParam Long categoryId,
+    		@RequestParam (defaultValue = "true") boolean status) {
+        return tipsService.getByCatId(categoryId, status);
     }
 
     @GetMapping("/{tipId}")

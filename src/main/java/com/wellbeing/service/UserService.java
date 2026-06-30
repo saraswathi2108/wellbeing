@@ -95,9 +95,9 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Activity not found"));
 
         // User verification
-        if (!activity.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("This activity does not belong to the user");
-        }
+//        if (!activity.getUser().getId().equals(userId)) {
+//            throw new UnauthorizedException("This activity does not belong to the user");
+//        }
 
         // 2. Calculate Score Change (Drain = minus, Recovery = plus)
         int scoreChange = activity.getActivityPercentage(); // Assuming this is the value
@@ -181,11 +181,11 @@ public class UserService {
 	    
 	    // 3. Fetch data based on today's timeframe
 	    if (activityType == null) {
-	        activities = activityRepository.findByUserIdAndStatusTrueAndCreatedAtBetweenOrderByCreatedAtDesc(
+	        activities = activityRepository.findUserActivitiesAndDefaults(
 	            userId, startOfDay, endOfDay
 	        );
 	    } else {
-	        activities = activityRepository.findByUserIdAndActivityTypeAndStatusTrueAndCreatedAtBetweenOrderByCreatedAtDesc(
+	        activities = activityRepository.findUserActivitiesAndDefaultsByType(
 	            userId, activityType, startOfDay, endOfDay
 	        );
 	    }
@@ -210,6 +210,7 @@ public class UserService {
 	            dto.setActivityPercenage(act.getActivityPercentage()); 
 	            dto.setStatus(act.getStatus());
 	            dto.setCreatedAt(act.getCreatedAt());
+	            dto.setIsDefault(act.getIsDefault());
 	            return dto;
 	        }).toList();
 	}

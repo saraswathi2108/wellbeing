@@ -52,7 +52,7 @@ public class AIService {
     	String systemPrompt = """
     			You are an expert wellbeing coach.
 
-    			Always provide practical wellbeing advice based user current wellbeing score.
+    			Always provide practical wellbeing advice based user current wellbeing score and tip score should be round figure (10-30).
 
 
 				""";

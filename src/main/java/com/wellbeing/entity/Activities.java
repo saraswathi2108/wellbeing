@@ -29,7 +29,7 @@ public class Activities {
 	private Integer activityPercentage;
 	private Boolean status;
 	private LocalDateTime createdAt;
-	
+	private Boolean isDefault;
 	
 
 }

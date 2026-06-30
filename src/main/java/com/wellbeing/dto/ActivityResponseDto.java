@@ -15,5 +15,6 @@ public class ActivityResponseDto {
 	private Integer activityPercenage;
 	private Boolean status;
 	private LocalDateTime createdAt;
+	private Boolean isDefault;
 
 }
