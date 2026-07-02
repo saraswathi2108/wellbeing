@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wellbeing.dto.TipCategoryResponseDTO;
 import com.wellbeing.dto.TipsRequestDto;
-import com.wellbeing.dto.TipsResponseDto;
 import com.wellbeing.service.CategoryTipService;
 
 import lombok.RequiredArgsConstructor;

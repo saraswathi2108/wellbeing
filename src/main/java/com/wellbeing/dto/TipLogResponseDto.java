@@ -11,7 +11,7 @@ public class TipLogResponseDto {
 
     private String tipLogId;
     private String tipId;
-    private String tipName;
+    private String tipCategoryName;
     private Integer scoreChange;
     private LocalDateTime appliedAt;
 

@@ -70,9 +70,10 @@ public class UserController {
 	
 	@PutMapping("/delete/{activityId}")
 	public String deleteActivity(@PathVariable String activityId,
-								@RequestParam Boolean status) {
+								@AuthenticationPrincipal CustomUserDetails currentUser) {
 		
-		return userService.deleteActivity(activityId, status);
+		String userId = currentUser.getId();
+		return userService.deleteActivity(activityId, userId);
 	}
 	
 	

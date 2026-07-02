@@ -33,5 +33,13 @@ public class Payment {
     @JoinColumn(name = "user_sub_id")
     private UserSubscription userSubscription;
 
+    
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private Users user;
+
+    @ManyToOne
+    @JoinColumn(name = "subscription_id")
+    private Subscription subscription;
 
 }

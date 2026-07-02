@@ -3,13 +3,18 @@ package com.wellbeing.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
@@ -20,18 +25,25 @@ import com.wellbeing.ExceptionHandler.UnauthorizedException;
 import com.wellbeing.dto.ActivityAddDto;
 import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
+import com.wellbeing.dto.AdminUserMonthlyStatsDto;
 import com.wellbeing.dto.DailyActivityPercentageDto;
 import com.wellbeing.dto.MostUsedActivitiesDto;
+import com.wellbeing.dto.SubscriptionAnalyticsDto;
 import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.ActivityLogs;
 import com.wellbeing.entity.ActivityType;
+import com.wellbeing.entity.PrimaryRole;
 import com.wellbeing.entity.ScoreHistory;
+import com.wellbeing.entity.Subscription;
+import com.wellbeing.entity.UserDeletedActivity;
 import com.wellbeing.entity.Users;
 import com.wellbeing.entity.WellbeingScore;
 import com.wellbeing.repository.ActivityLogsRepository;
 import com.wellbeing.repository.ActivityRepository;
 import com.wellbeing.repository.ScoreHistoryRepository;
+import com.wellbeing.repository.SubscriptionRepository;
+import com.wellbeing.repository.UserDeletedActivityRepository;
 import com.wellbeing.repository.UserRepository;
 import com.wellbeing.repository.WellBeingScoreRepository;
 import jakarta.transaction.Transactional;
@@ -50,6 +62,8 @@ public class UserService {
 	private final ActivityLogsRepository activityLogsRepository;
 	private final WellBeingScoreRepository wellBeingScoreRepository;
 	private final ScoreHistoryRepository scoreHistoryRepository;
+	private final SubscriptionRepository subscriptionRepository;
+	private final UserDeletedActivityRepository userDeletedActivityRepository;
 
 	
 	@Transactional
@@ -217,18 +231,36 @@ public class UserService {
 
 
 
-	public String deleteActivity(String activityId, Boolean status) {
+	@Transactional
+	public String deleteActivity(String activityId, String userId) {
 		
-		Activities activities = activityRepository.findById(activityId)
+		Activities activity = activityRepository.findById(activityId)
 				.orElseThrow(() -> new ResourceNotFoundException("Activity Not Found to delete"));
 		
-		activities.setStatus(status);
-		
-		activityRepository.save(activities);
+		Users user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
 
-		return "Activity deleted Succesfully";
+
+		if (Boolean.FALSE.equals(activity.getIsDefault()) && activity.getUser() != null) {
+			if (!activity.getUser().getId().equals(userId)) {
+				throw new UnauthorizedException("This activity does not belong to you");
+			}
+			activity.setStatus(false);
+			activityRepository.save(activity);
+		} 
+		// Condition 2: Shared Default Activity aithe complete table lo drop cheyakunda user list mapping pettu
+		else {
+			boolean alreadyDeleted = userDeletedActivityRepository.existsByUserIdAndActivityId(userId, activityId);
+			if (!alreadyDeleted) {
+				UserDeletedActivity deletedActivity = new UserDeletedActivity();
+				deletedActivity.setUser(user);
+				deletedActivity.setActivity(activity);
+				userDeletedActivityRepository.save(deletedActivity);
+			}
+		}
+
+		return "Activity deleted successfully for this user";
 	}
-	
 	
 	
 	public List<ActivityLogResponseDto> getRecentActivities(String userId) {
@@ -255,34 +287,40 @@ public class UserService {
 	}
 	
 	
-	public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String userId) {
+public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String userId) {
 		
-		LocalDateTime endDate = LocalDateTime.now();
-		LocalDateTime startDate = endDate.minusDays(7); 
+        // 1. Exact Timezone Calculation
+		ZoneId istZone = ZoneId.of("Asia/Kolkata");
+		LocalDateTime endDate = LocalDateTime.now(istZone);
+		LocalDateTime startDate = endDate.minusDays(7).with(LocalTime.MIN); 
 
-		List<ActivityLogs> logs = activityLogsRepository.findByUserIdAndCreatedAtBetween(userId, startDate, endDate);
+        // 2. Fetch all score changes for the last 7 days in Ascending order
+		List<ScoreHistory> historyLogs = scoreHistoryRepository
+                .findByUserIdAndRecordedAtBetweenOrderByRecordedAtAsc(userId, startDate, endDate);
 
-		// 3. Date prakaram group chesi, aa roju chesina percentage add cheyi 
-        // (DRAIN aina RECOVERY aina percentage matram absolute value e untundi)
-		Map<LocalDate, Integer> dailyStats = logs.stream()
-				.collect(Collectors.groupingBy(
-						log -> log.getCreatedAt().toLocalDate(),
-						Collectors.summingInt(log -> Math.abs(log.getScoreChange())) 
+
+		Map<LocalDate, Integer> dailyLatestScores = historyLogs.stream()
+				.collect(Collectors.toMap(
+						log -> log.getRecordedAt().toLocalDate(),
+						log -> log.getNewScore(),
+						(existing, replacement) -> replacement 
 				));
-
-		// 4. Missing days cover chey (Frontend chart break avvakunda)
+		
 		List<DailyActivityPercentageDto> result = new ArrayList<>();
+		
 		for (int i = 6; i >= 0; i--) {
 			LocalDate date = endDate.minusDays(i).toLocalDate();
+            
+            Integer finalScoreForDay = dailyLatestScores.getOrDefault(date, 100);
+            
 			result.add(DailyActivityPercentageDto.builder()
 					.date(date)
-					.totalPercentage(dailyStats.getOrDefault(date, 0))
+					.totalPercentage(finalScoreForDay)
 					.build());
 		}
 
 		return result;
 	}
-
 
 
 	public UserProfileDto getProfile(String userId) {
@@ -378,5 +416,118 @@ public class UserService {
 	        .mostUsedRecovery(recoveryResult.isEmpty() ? "No Recovery Activities Logged" : recoveryResult.get(0))
 	        .build();
 	}
+
+
+
+	public AdminUserMonthlyStatsDto getMonthlyReportOfUser(String userId, int month, int year) {
+		
+		Users user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User Not Found With id: "+ userId));
+		
+		
+		YearMonth yearMonth = YearMonth.of(year, month);
+	    LocalDateTime startOfMonth = yearMonth.atDay(1).atStartOfDay();
+	    LocalDateTime endOfMonth = yearMonth.atEndOfMonth().atTime(23, 59, 59);
+	    
+	    
+//	    Get Average Score
+	    Double avgScore = scoreHistoryRepository.getAverageScoreByUserIdAndMonth(userId, startOfMonth, endOfMonth);
+
+
+	 // Get Most Drained Activity
+	    List<String> drainResult = activityLogsRepository.findMostLoggedActivityForMonth(
+	            userId, ActivityType.DRAIN, startOfMonth, endOfMonth, PageRequest.of(0, 1)
+	    );
+
+	    
+	  // Get Most Recovered Activity
+	    List<String> recoveryResult = activityLogsRepository.findMostLoggedActivityForMonth(
+	            userId, ActivityType.RECOVERY, startOfMonth, endOfMonth, PageRequest.of(0, 1)
+	    );
+	    
+	    
+	    
+	    log.info("Fetching user: {} monthly stats", userId);
+	    
+	    return AdminUserMonthlyStatsDto.builder()
+	            .averageWellbeingScore(avgScore != null ? Math.round(avgScore * 100.0) / 100.0 : 0.0)
+	            .mostDrainedActivity(drainResult.isEmpty() ? "No Drain Activities Logged" : drainResult.get(0))
+	            .mostRecoveredActivity(recoveryResult.isEmpty() ? "No Recovery Activities Logged" : recoveryResult.get(0))
+	            .build();
+	}
+	
+	
+	
+	public List<SubscriptionAnalyticsDto> getSubscriptionAnalytics() {
+		
+	    List<Subscription> subscriptions = subscriptionRepository.findAll();
+
+	    return subscriptions.stream().map(sub -> {
+	        
+	        
+	        List<String> userIds = sub.getUserSubscriptions().stream()
+	                .filter(us -> us.getUser() != null)
+	                .map(us -> us.getUser().getId())
+	                .distinct() 
+	                .toList();
+
+	        return SubscriptionAnalyticsDto.builder()
+	                .subId(sub.getSubId())
+	                .subName(sub.getSubName())
+	                .price(sub.getPrice())
+	                .totalPurchases((long) userIds.size())
+	                .userIds(userIds)
+	                .build();
+	    }).toList();
+	}
+
+
+
+	public List<UserProfileDto> getAllUsers(Pageable pageable) {
+		
+		Page<Users> users = userRepository.findAll(pageable);
+		
+		if(users.isEmpty()) {
+			throw new ResourceNotFoundException("Users Not Found");
+		}
+		
+//		return users
+//		        .stream()
+//		        .map(user -> UserProfileDto.builder()
+//		                .userId(user.getId())
+//		                .name(user.getName())
+//		                .email(user.getEmail())
+//		                .age(user.getAge())
+//		                .gender(user.getGender())
+//		                .primaryRole(user.getPrimaryRole())
+//		                .wakeUpTime(user.getWakeUpTime())
+//		                .phoneNo(user.getPhoneNo())
+//		                .guardianName(user.getGuardianName())
+//		                .guardianPhoneNo(user.getGuardianPhoneNo())
+//		                .build())
+//		        .toList();
+		
+		return users.stream()
+				.sorted(Comparator.comparing(Users::getName).reversed())
+				.map(user -> {
+					UserProfileDto dto = new UserProfileDto();
+					dto.setUserId(user.getId());
+					dto.setName(user.getName());
+					dto.setEmail(user.getEmail());
+					dto.setAge(user.getAge());
+					dto.setGender(user.getGender());
+					dto.setPrimaryRole(user.getPrimaryRole());
+					dto.setWakeUpTime(user.getWakeUpTime());
+					dto.setPhoneNo(user.getPhoneNo());
+					dto.setGuardianName(user.getGuardianName());
+					dto.setGuardianPhoneNo(user.getGuardianPhoneNo());
+					
+					return dto;
+					
+					
+				})
+				.toList();
+	}
+
 	
 }

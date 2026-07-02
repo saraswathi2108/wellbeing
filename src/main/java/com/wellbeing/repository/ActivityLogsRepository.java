@@ -32,5 +32,20 @@ public interface ActivityLogsRepository extends JpaRepository<ActivityLogs, Stri
 		        @Param("type") ActivityType type, 
 		        @Param("startDate") LocalDateTime startDate, 
 		        Pageable pageable);
+	
+	
+	
+//	Most Logged activity by the user for the month
+	@Query("SELECT al.activity.activityName FROM ActivityLogs al " +
+		       "WHERE al.user.id = :userId AND al.activity.activityType = :type " +
+		       "AND al.createdAt BETWEEN :start AND :end " +
+		       "GROUP BY al.activity.activityName " +
+		       "ORDER BY COUNT(al.id) DESC")
+		List<String> findMostLoggedActivityForMonth(
+		        @Param("userId") String userId, 
+		        @Param("type") ActivityType type, 
+		        @Param("start") LocalDateTime start, 
+		        @Param("end") LocalDateTime end, 
+		        Pageable pageable);
 
 }

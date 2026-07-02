@@ -34,14 +34,16 @@ public interface ActivityRepository extends JpaRepository<Activities, String> {
 	
 	@Query("SELECT a FROM Activities a WHERE a.status = true AND " +
 		       "((a.user.id = :userId AND a.createdAt BETWEEN :start AND :end) OR a.isDefault = true) " +
+		       "AND a.id NOT IN (SELECT uda.activity.id FROM UserDeletedActivity uda WHERE uda.user.id = :userId) " +
 		       "ORDER BY a.isDefault DESC, a.createdAt DESC")
 		List<Activities> findUserActivitiesAndDefaults(
 		        @Param("userId") String userId, 
 		        @Param("start") LocalDateTime start, 
 		        @Param("end") LocalDateTime end);
 
-		@Query("SELECT a FROM Activities a WHERE a.status = true AND a.activityType = :type AND " +
+	@Query("SELECT a FROM Activities a WHERE a.status = true AND a.activityType = :type AND " +
 		       "((a.user.id = :userId AND a.createdAt BETWEEN :start AND :end) OR a.isDefault = true) " +
+		       "AND a.id NOT IN (SELECT uda.activity.id FROM UserDeletedActivity uda WHERE uda.user.id = :userId) " +
 		       "ORDER BY a.isDefault DESC, a.createdAt DESC")
 		List<Activities> findUserActivitiesAndDefaultsByType(
 		        @Param("userId") String userId, 

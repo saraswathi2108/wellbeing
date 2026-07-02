@@ -16,6 +16,8 @@ import com.wellbeing.repository.PaymentRepository;
 import com.wellbeing.repository.SubscriptionRepository;
 import com.wellbeing.repository.UserRepository;
 import com.wellbeing.repository.UserSubscriptionRepository;
+
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,227 +32,155 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PaymentService {
 
-    private final SubscriptionRepository subscriptionRepository;
-    private final UserSubscriptionRepository userSubscriptionRepository;
-    private final PaymentRepository paymentRepository;
-    private final UserRepository userRepository;
+	private final SubscriptionRepository subscriptionRepository;
+	private final UserSubscriptionRepository userSubscriptionRepository;
+	private final PaymentRepository paymentRepository;
+	private final UserRepository userRepository;
+	private final RazorpayClient razorpayClient;
+	
 
-    @Value("${razor.key.id}")
-    private String keyId;
+	@Value("${razor.key.id}")
+	private String keyId;
 
-    @Value("${razor.key.secret}")
-    private String keySecret;
+	@Value("${razor.key.secret}")
+	private String keySecret;
+	
+	
 
-    public OrderResponse createOrder(CreateOrderRequest request) throws Exception {
+	public OrderResponse createOrder(CreateOrderRequest request) throws Exception {
 
-        String userId = SecurityUtil.getCurrentUserId()
-                .orElseThrow(() ->
-                        new UnauthorizedException("User not authenticated"));
+		String userId = SecurityUtil.getCurrentUserId()
+				.orElseThrow(() -> new UnauthorizedException("User not authenticated"));
 
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+		Users user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Subscription subscription = subscriptionRepository
-                .findById(request.getSubId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Subscription not found"));
+		Subscription subscription = subscriptionRepository.findById(request.getSubId())
+				.orElseThrow(() -> new ResourceNotFoundException("Subscription not found"));
 
-        if (!Boolean.TRUE.equals(subscription.getStatus())) {
-            throw new BadRequestException("Subscription is inactive");
-        }
+		if (!Boolean.TRUE.equals(subscription.getStatus())) {
+			throw new BadRequestException("Subscription is inactive");
+		}
 
-        // Prevent trial plans from payment flow
-        if (Boolean.TRUE.equals(subscription.getTrialPlan())) {
-            throw new BadRequestException(
-                    "Trial plans cannot be purchased");
-        }
+		if (Boolean.TRUE.equals(subscription.getTrialPlan())) {
+			throw new BadRequestException("Trial plans cannot be purchased");
+		}
 
-        RazorpayClient razorpay =
-                new RazorpayClient(keyId, keySecret);
+		JSONObject options = new JSONObject();
+		options.put("amount", subscription.getPrice() * 100);
+		options.put("currency", "INR");
+		options.put("receipt", "USER_" + userId + "_" + System.currentTimeMillis());
 
-        JSONObject options = new JSONObject();
+		Order order = razorpayClient.orders.create(options);
 
-        options.put("amount", subscription.getPrice() * 100);
-        options.put("currency", "INR");
-        options.put("receipt",
-                "USER_" + userId + "_" + System.currentTimeMillis());
+		Long paymentCount = paymentRepository.count() + 1;
+		String paymentId = String.format("PAY%05d", paymentCount);
 
-        Order order;
+		Payment payment = new Payment();
+		payment.setPaymentId(paymentId);
+		payment.setRazorpayOrderId(order.get("id"));
+		payment.setAmount(subscription.getPrice());
+		payment.setPaymentStatus(PaymentStatus.PENDING);
+		payment.setPaymentDate(LocalDateTime.now());
 
-        try {
-            order = razorpay.orders.create(options);
-        } catch (Exception e) {
-            throw new BadRequestException(
-                    "Unable to create payment order");
-        }
+		payment.setUser(user);
+		payment.setSubscription(subscription);
 
-        Long paymentCount = paymentRepository.count() + 1;
+		paymentRepository.save(payment);
 
-        String paymentId =
-                String.format("PAY%05d", paymentCount);
+		OrderResponse response = new OrderResponse();
+		response.setRazorPayOrderId(order.get("id").toString());
+		response.setAmount(subscription.getPrice());
+		response.setKeyId(keyId);
 
-        Payment payment = new Payment();
+		return response;
+	}
+	
+	
+	
 
-        payment.setPaymentId(paymentId);
-        payment.setRazorpayOrderId(order.get("id").toString());
-        payment.setAmount(subscription.getPrice());
-        payment.setPaymentStatus(PaymentStatus.PENDING);
-        payment.setPaymentDate(LocalDateTime.now());
+	@Transactional
+	public String verifyPayment(VerifyPaymentRequest request) throws Exception {
 
-//        // Recommended
-//        payment.setUser(user);
-//        payment.setSubscription(subscription);
+		String userId = SecurityUtil.getCurrentUserId()
+				.orElseThrow(() -> new UnauthorizedException("User not authenticated"));
 
-        paymentRepository.save(payment);
+		if (paymentRepository.findByRazorpayPaymentId(request.getRazorpayPaymentId()).isPresent()) {
+			throw new AlreadyExistsException("Payment already verified");
+		}
 
-        OrderResponse response = new OrderResponse();
+		boolean validSignature = Utils.verifySignature(
+				request.getRazorpayOrderId() + "|" + request.getRazorpayPaymentId(), request.getRazorpaySignature(),
+				keySecret);
 
-        response.setRazorPayOrderId(order.get("id").toString());
-        response.setAmount(subscription.getPrice());
-        response.setKeyId(keyId);
+		if (!validSignature) {
+			throw new BadRequestException("Invalid payment signature");
+		}
 
-        return response;
-    }
+		// SECURITY FIX 1: Frontend icche SubId ni theesey. Manam DB lo createOrder appudu save chesina payment order theesko.
+		Payment payment = paymentRepository.findByRazorpayOrderId(request.getRazorpayOrderId())
+				.orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
-    public String verifyPayment(
-            VerifyPaymentRequest request) throws Exception {
+		// SECURITY FIX 2: Payment nunchi gattiga bind ayyina Subscription details laagu.
+		Subscription subscription = payment.getSubscription();
+		if (subscription == null) {
+			throw new BadRequestException("No subscription linked to this payment order");
+		}
 
+		// SECURITY FIX 3: Ee payment create chesina user e verify chesthunnada leda check chey (Cross-user access prevention)
+		Users user = payment.getUser();
+		if (!user.getId().equals(userId)) {
+			throw new UnauthorizedException("This payment order does not belong to you");
+		}
 
-        String userId = SecurityUtil.getCurrentUserId()
-                .orElseThrow(() ->
-                        new UnauthorizedException(
-                                "User not authenticated"));
+		payment.setRazorpayPaymentId(request.getRazorpayPaymentId());
+		payment.setRazorpaySignature(request.getRazorpaySignature());
+		payment.setPaymentMethod("RAZORPAY");
+		payment.setPaymentStatus(PaymentStatus.SUCCESSFUL);
+		payment.setPaymentDate(LocalDateTime.now());
 
-        if (paymentRepository
-                .findByRazorpayPaymentId(
-                        request.getRazorpayPaymentId())
-                .isPresent()) {
+		paymentRepository.save(payment);
 
-            throw new AlreadyExistsException(
-                    "Payment already verified");
-        }
+		// Expire existing active subscriptions
+		List<UserSubscription> activeSubscriptions = userSubscriptionRepository.findAllByUser_IdAndStatus(userId,
+				UserSubscriptionStatus.ACTIVE);
 
-        boolean validSignature =
-                Utils.verifySignature(
-                        request.getRazorpayOrderId()
-                                + "|"
-                                + request.getRazorpayPaymentId(),
-                        request.getRazorpaySignature(),
-                        keySecret);
+		for (UserSubscription sub : activeSubscriptions) {
+			sub.setStatus(UserSubscriptionStatus.EXPIRED);
+		}
 
-        if (!validSignature) {
-            throw new BadRequestException(
-                    "Invalid payment signature");
-        }
+		userSubscriptionRepository.saveAll(activeSubscriptions);
 
-        Subscription subscription =
-                subscriptionRepository
-                        .findById(request.getSubId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Subscription not found"));
+		// Create new subscription history record
+		Long count = userSubscriptionRepository.count() + 1;
+		String userSubId = String.format("US%03d", count);
 
-        Payment payment =
-                paymentRepository
-                        .findByRazorpayOrderId(
-                                request.getRazorpayOrderId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Payment not found"));
+		UserSubscription newSubscription = new UserSubscription();
+		newSubscription.setUserSubId(userSubId);
+		newSubscription.setUser(user);
+		newSubscription.setSubscription(subscription);
+		newSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+		newSubscription.setStartDate(LocalDate.now());
+		newSubscription.setEndDate(LocalDate.now().plusDays(subscription.getDurationDays()));
 
-        payment.setRazorpayPaymentId(
-                request.getRazorpayPaymentId());
+		userSubscriptionRepository.save(newSubscription);
 
-        payment.setRazorpaySignature(
-                request.getRazorpaySignature());
+		return "Subscription activated successfully";
+	}
+	
+	
+	
 
-        payment.setPaymentMethod("RAZORPAY");
+	public void handlePaymentFailure(String razorpayOrderId) {
 
-        payment.setPaymentStatus(
-                PaymentStatus.SUCCESSFUL);
+		Payment payment = paymentRepository.findByRazorpayOrderId(razorpayOrderId)
+				.orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
-        payment.setPaymentDate(
-                LocalDateTime.now());
+		if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
 
-        paymentRepository.save(payment);
+			payment.setPaymentStatus(PaymentStatus.FAILED);
 
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found"));
-
-// Expire existing active subscription
-        List<UserSubscription> activeSubscriptions =
-                userSubscriptionRepository
-                        .findAllByUser_IdAndStatus(
-                                userId,
-                                UserSubscriptionStatus.ACTIVE);
-
-
-        for (UserSubscription sub : activeSubscriptions) {
-            sub.setStatus(UserSubscriptionStatus.EXPIRED);
-        }
-
-        userSubscriptionRepository.saveAll(activeSubscriptions);
-
-
-// Create new subscription history record
-        Long count =
-                userSubscriptionRepository.count() + 1;
-
-        String userSubId =
-                String.format("US%03d", count);
-
-        UserSubscription newSubscription =
-                new UserSubscription();
-
-        newSubscription.setUserSubId(
-                userSubId);
-
-        newSubscription.setUser(user);
-
-        newSubscription.setSubscription(
-                subscription);
-
-        newSubscription.setStatus(
-                UserSubscriptionStatus.ACTIVE);
-
-        newSubscription.setStartDate(
-                LocalDate.now());
-
-        newSubscription.setEndDate(
-                LocalDate.now()
-                        .plusDays(
-                                subscription.getDurationDays()));
-
-        userSubscriptionRepository.save(
-                newSubscription);
-
-        return "Subscription activated successfully";
-
-
-    }
-
-
-    public void handlePaymentFailure(
-            String razorpayOrderId) {
-
-        Payment payment =
-                paymentRepository
-                        .findByRazorpayOrderId(
-                                razorpayOrderId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Payment not found"));
-
-        if (payment.getPaymentStatus()
-                == PaymentStatus.PENDING) {
-
-            payment.setPaymentStatus(
-                    PaymentStatus.FAILED);
-
-            paymentRepository.save(payment);
-        }
-    }
-    }
+			paymentRepository.save(payment);
+		}
+	}
+}

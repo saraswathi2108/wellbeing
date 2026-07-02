@@ -103,7 +103,7 @@ public class WellBeingScoreService {
                 .map(log -> TipLogResponseDto.builder()
                         .tipLogId(log.getTipLogId())
                         .tipId(log.getTip().getTipId())
-                        .tipName(log.getTip().getTipName())
+                        .tipCategoryName(log.getTip().getTipCategory().getCategoryName())
                         .scoreChange(log.getScoreChange())
                         .appliedAt(log.getAppliedAt())
                         .build())

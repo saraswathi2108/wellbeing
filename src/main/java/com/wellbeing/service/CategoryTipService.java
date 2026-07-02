@@ -45,11 +45,21 @@ public class CategoryTipService {
 			throw new ResourceNotFoundException("TipCategory Not found By status: "+ status);
 		}
 		
+//		return tipCategories.stream()
+//				.map(tipCategoriey -> TipCategoryResponseDTO.builder()
+//						.categoryId(tipCategoriey.getId())
+//						.categoryTipName(tipCategoriey.getCategoryName())
+//						.build())
+//				.toList();
+		
 		return tipCategories.stream()
-				.map(tipCategoriey -> TipCategoryResponseDTO.builder()
-						.categoryId(tipCategoriey.getId())
-						.categoryTipName(tipCategoriey.getCategoryName())
-						.build())
+				.map(tipCategorie -> {
+					TipCategoryResponseDTO dto = new TipCategoryResponseDTO();
+					dto.setCategoryId(tipCategorie.getId());
+					dto.setCategoryTipName(tipCategorie.getCategoryName());
+					
+					return dto;
+				})
 				.toList();
 
 	}

@@ -3,6 +3,7 @@ package com.wellbeing.dto;
 import java.time.LocalDateTime;
 import java.util.TimeZone;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wellbeing.entity.PrimaryRole;
 
 import jakarta.persistence.EnumType;
@@ -16,6 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+//@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserProfileDto {
 	
 	private String userId;
