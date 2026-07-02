@@ -25,6 +25,7 @@ import com.wellbeing.ExceptionHandler.UnauthorizedException;
 import com.wellbeing.dto.ActivityAddDto;
 import com.wellbeing.dto.ActivityLogResponseDto;
 import com.wellbeing.dto.ActivityResponseDto;
+import com.wellbeing.dto.AdminConsultationResponseDto;
 import com.wellbeing.dto.AdminUserMonthlyStatsDto;
 import com.wellbeing.dto.DailyActivityPercentageDto;
 import com.wellbeing.dto.MostUsedActivitiesDto;
@@ -33,6 +34,8 @@ import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.ActivityLogs;
 import com.wellbeing.entity.ActivityType;
+import com.wellbeing.entity.ConsultationBooking;
+import com.wellbeing.entity.PaymentStatus;
 import com.wellbeing.entity.PrimaryRole;
 import com.wellbeing.entity.ScoreHistory;
 import com.wellbeing.entity.Subscription;
@@ -41,6 +44,7 @@ import com.wellbeing.entity.Users;
 import com.wellbeing.entity.WellbeingScore;
 import com.wellbeing.repository.ActivityLogsRepository;
 import com.wellbeing.repository.ActivityRepository;
+import com.wellbeing.repository.ConsultationBookingRepo;
 import com.wellbeing.repository.ScoreHistoryRepository;
 import com.wellbeing.repository.SubscriptionRepository;
 import com.wellbeing.repository.UserDeletedActivityRepository;
@@ -64,6 +68,7 @@ public class UserService {
 	private final ScoreHistoryRepository scoreHistoryRepository;
 	private final SubscriptionRepository subscriptionRepository;
 	private final UserDeletedActivityRepository userDeletedActivityRepository;
+	private final ConsultationBookingRepo consultationBookingRepo;
 
 	
 	@Transactional
@@ -526,6 +531,34 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 					
 					
 				})
+				.toList();
+	}
+
+
+
+	public List<AdminConsultationResponseDto> getConsultants(Pageable pageable) {
+		
+		List<ConsultationBooking> bookings = consultationBookingRepo
+				.findByPaymentStatusOrderByCreatedAtDesc(PaymentStatus.SUCCESSFUL, pageable);
+		
+		return bookings.stream()
+				.map(booking -> AdminConsultationResponseDto.builder()
+		                .bookingId(booking.getId())
+		                .userId(booking.getUser().getId())
+		                .userName(booking.getUser().getName())
+		                .userAge(booking.getUser().getAge())
+		                .userGender(booking.getUser().getGender())
+		                .registeredPhone(booking.getUser().getPhoneNo()) 
+		                .whatsappNumber(booking.getWhatsappNumber())    
+		                .occupation(booking.getOccupation())
+		                .city(booking.getCity())
+		                .difficulties(booking.getDifficulties().stream().map(Enum::name).toList())
+		                .duration(booking.getDuration().name())
+		                .amountPaid(booking.getAmount())
+		                .bookedAt(booking.getCreatedAt())
+		                .adminInteracted(booking.getAdminInteracted())
+		                .build()
+		             )
 				.toList();
 	}
 

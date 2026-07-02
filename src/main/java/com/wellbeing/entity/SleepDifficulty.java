@@ -1,0 +1,11 @@
+package com.wellbeing.entity;
+
+public enum SleepDifficulty {
+    DIFFICULTY_FALLING_ASLEEP,
+    WOKE_UP_DURING_THE_NIGHT,
+    MIND_WONT_STOP_THINKING,
+    FEELING_ANXIOUS_BEFORE_SLEEP,
+    STRESS_RELATED,
+    EMOTIONAL_DISTRESS,
+    OTHER
+}

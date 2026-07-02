@@ -1,6 +1,7 @@
 package com.wellbeing.controller;
 
 
+import com.wellbeing.dto.AdminConsultationResponseDto;
 import com.wellbeing.dto.AdminUserMonthlyStatsDto;
 import com.wellbeing.dto.SubscriptionAnalyticsDto;
 import com.wellbeing.dto.SubscriptionRequest;
@@ -81,4 +82,15 @@ public class AdminController {
     	return userService.getAllUsers(pageable);
     }
     
+    
+    
+    @GetMapping("/getConsultations")
+    public List<AdminConsultationResponseDto> getConsultations(
+    							@RequestParam (defaultValue = "0") int page,
+    							@RequestParam (defaultValue = "15") int size){
+    	
+    	Pageable pageable = PageRequest.of(page, size);
+    	
+    	return userService.getConsultants(pageable);
+    }
 }
