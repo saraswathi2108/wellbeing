@@ -1,7 +1,10 @@
 package com.wellbeing.controller;
 
+import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.ChangePasswordDTO;
@@ -17,8 +20,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import com.wellbeing.dto.UserRegisterDTO;
 import com.wellbeing.dto.VerifyOtpDTO;
+import com.wellbeing.entity.UserSubscription;
+import com.wellbeing.entity.UserSubscriptionStatus;
 import com.wellbeing.entity.Users;
 import com.wellbeing.repository.UserRepository;
+import com.wellbeing.repository.UserSubscriptionRepository;
 import com.wellbeing.service.JwtService;
 
 import lombok.RequiredArgsConstructor;
@@ -36,7 +42,9 @@ public class AuthController {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final AuthService authService;
-
+    private final UserSubscriptionRepository userSubscriptionRepository;
+    
+    
 
 	@PostMapping("/login")
 	    public String loginUser(@RequestBody LoginDto dto) {
@@ -52,11 +60,51 @@ public class AuthController {
 	        Users user = userRepository.findByEmail(dto.getEmail())
 	                .orElseThrow(() -> new ResourceNotFoundException("User not found after successful authentication"));
 
+	        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByUserId(user.getId());
+	        
+	        boolean trialUsed = false;
+	        UserSubscriptionStatus trialStatus = UserSubscriptionStatus.EXPIRED;
+	        String trialexpireDate = null;
+	        
+	        String activePlanId = null;
+	        String activePlanName = null;
+	        UserSubscriptionStatus userSubscriptionStatus = UserSubscriptionStatus.EXPIRED;
+	        String expireDate = null;
+
+	        
+
+	        for (UserSubscription us : userSubscriptions) {
+	            if (Boolean.TRUE.equals(us.getSubscription().getTrialPlan())) {
+	                trialUsed = true; 
+	                trialStatus = us.getStatus();
+	                trialexpireDate = us.getEndDate().toString();
+	            }
+	            if (us.getStatus() == UserSubscriptionStatus.ACTIVE) {
+	                activePlanId = us.getSubscription().getSubId();
+	                activePlanName = us.getSubscription().getSubName();
+	                userSubscriptionStatus = us.getStatus();
+	                expireDate = us.getEndDate().toString();
+
+	            }
+	        }
+	        
+
 	        Map<String, Object> extraClaims = new HashMap<>();
 	        extraClaims.put("role", userDetails.getAuthorities());
 	        extraClaims.put("userId", user.getId());
 	        extraClaims.put("name", user.getName());
+	        
+	        extraClaims.put("trialUsed", trialUsed);
+	        extraClaims.put("trialStatus", trialStatus);
+	        extraClaims.put("trialexpireDate", trialexpireDate);
 
+	        
+	        extraClaims.put("activePlanId", activePlanId);
+	        extraClaims.put("activePlanName", activePlanName);
+	        extraClaims .put("planStatus", userSubscriptionStatus);
+	        extraClaims .put("expireDate", expireDate);
+
+	        
 	        log.info("User logged in Succesfully: {}", dto.getEmail());
 	        return jwtService.generateToken(extraClaims, userDetails);
 	    }

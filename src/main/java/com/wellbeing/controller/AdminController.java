@@ -3,6 +3,7 @@ package com.wellbeing.controller;
 
 import com.wellbeing.dto.AdminConsultationResponseDto;
 import com.wellbeing.dto.AdminUserMonthlyStatsDto;
+import com.wellbeing.dto.PlanUsersResponseDto;
 import com.wellbeing.dto.SubscriptionAnalyticsDto;
 import com.wellbeing.dto.SubscriptionRequest;
 import com.wellbeing.dto.SubscriptionResponse;
@@ -87,10 +88,33 @@ public class AdminController {
     @GetMapping("/getConsultations")
     public List<AdminConsultationResponseDto> getConsultations(
     							@RequestParam (defaultValue = "0") int page,
-    							@RequestParam (defaultValue = "15") int size){
+    							@RequestParam (defaultValue = "10") int size){
     	
     	Pageable pageable = PageRequest.of(page, size);
     	
     	return userService.getConsultants(pageable);
+    }
+    
+    
+    
+    @PostMapping("/updateCOnsultationFee")
+    public String updateConsultationFee(@RequestParam Integer newFee) {
+    	
+    	return userService.updateFee(newFee);
+    }
+    
+    
+    @PatchMapping("/markAsConsulted")
+    public String markAsConsulted(@RequestParam Long bookingId) {
+    	
+    	return userService.markAsConsulted(bookingId);
+    }
+    
+    
+    
+    @GetMapping("/planByUsers")
+    private List<PlanUsersResponseDto> getByPlans(@RequestParam List<String> userIds){
+    	
+    	return userService.getUsersByPlan(userIds);
     }
 }

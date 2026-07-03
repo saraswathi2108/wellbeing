@@ -19,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 
+import com.wellbeing.ExceptionHandler.BadRequestException;
 import com.wellbeing.ExceptionHandler.ConflictException;
 import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.ExceptionHandler.UnauthorizedException;
@@ -29,11 +30,13 @@ import com.wellbeing.dto.AdminConsultationResponseDto;
 import com.wellbeing.dto.AdminUserMonthlyStatsDto;
 import com.wellbeing.dto.DailyActivityPercentageDto;
 import com.wellbeing.dto.MostUsedActivitiesDto;
+import com.wellbeing.dto.PlanUsersResponseDto;
 import com.wellbeing.dto.SubscriptionAnalyticsDto;
 import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.Activities;
 import com.wellbeing.entity.ActivityLogs;
 import com.wellbeing.entity.ActivityType;
+import com.wellbeing.entity.AppConfiguration;
 import com.wellbeing.entity.ConsultationBooking;
 import com.wellbeing.entity.PaymentStatus;
 import com.wellbeing.entity.PrimaryRole;
@@ -44,6 +47,7 @@ import com.wellbeing.entity.Users;
 import com.wellbeing.entity.WellbeingScore;
 import com.wellbeing.repository.ActivityLogsRepository;
 import com.wellbeing.repository.ActivityRepository;
+import com.wellbeing.repository.AppConfigurationRepo;
 import com.wellbeing.repository.ConsultationBookingRepo;
 import com.wellbeing.repository.ScoreHistoryRepository;
 import com.wellbeing.repository.SubscriptionRepository;
@@ -69,6 +73,7 @@ public class UserService {
 	private final SubscriptionRepository subscriptionRepository;
 	private final UserDeletedActivityRepository userDeletedActivityRepository;
 	private final ConsultationBookingRepo consultationBookingRepo;
+	private final AppConfigurationRepo appConfigurationRepo;
 
 	
 	@Transactional
@@ -100,6 +105,7 @@ public class UserService {
 
 		return "Activity Added Successfully with ID: " + activityId;
 	}
+	
 	
 	
 	
@@ -182,6 +188,7 @@ public class UserService {
 
         return "Activity logged successfully. Previous Score: " + previousScore + ", New Score: " + newScore;
     }
+	
 
 
 
@@ -234,6 +241,7 @@ public class UserService {
 	        }).toList();
 	}
 
+	
 
 
 	@Transactional
@@ -268,6 +276,7 @@ public class UserService {
 	}
 	
 	
+	
 	public List<ActivityLogResponseDto> getRecentActivities(String userId) {
 		
 		userRepository.findById(userId)
@@ -292,7 +301,8 @@ public class UserService {
 	}
 	
 	
-public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String userId) {
+	
+	public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String userId) {
 		
         // 1. Exact Timezone Calculation
 		ZoneId istZone = ZoneId.of("Asia/Kolkata");
@@ -328,6 +338,7 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 	}
 
 
+
 	public UserProfileDto getProfile(String userId) {
 		
 		Users users = userRepository.findById(userId)
@@ -348,6 +359,8 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 				.guardianPhoneNo(users.getGuardianPhoneNo())
 				.build();
 	}
+	
+	
 	
 	
 	
@@ -389,6 +402,7 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 	
 	
 	
+	
 	@Scheduled(cron = "0 0 0 * * ?") // Daily midnight
 	@Transactional
 	public void wellBeingScheduler() {
@@ -401,6 +415,8 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 
 	    log.info("Wellbeing scores reset successfully");
 	}
+	
+	
 	
 	
 	public MostUsedActivitiesDto getMostUsedActivitiesForWeek(String userId) {
@@ -421,6 +437,7 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 	        .mostUsedRecovery(recoveryResult.isEmpty() ? "No Recovery Activities Logged" : recoveryResult.get(0))
 	        .build();
 	}
+	
 
 
 
@@ -463,39 +480,40 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 	
 	
 	
+	
+	
 	public List<SubscriptionAnalyticsDto> getSubscriptionAnalytics() {
 		
 	    List<Subscription> subscriptions = subscriptionRepository.findAll();
+	    
 
 	    return subscriptions.stream().map(sub -> {
-	        
-	        
-	        List<String> userIds = sub.getUserSubscriptions().stream()
-	                .filter(us -> us.getUser() != null)
-	                .map(us -> us.getUser().getId())
-	                .distinct() 
-	                .toList();
+	    	
+        List<String> userIds = sub.getUserSubscriptions().stream()
+	        		.filter(us -> us.getUser() != null)
+					.map(us -> us.getUser().getId())
+					.distinct()
+					.toList();
 
-	        return SubscriptionAnalyticsDto.builder()
-	                .subId(sub.getSubId())
-	                .subName(sub.getSubName())
-	                .price(sub.getPrice())
-	                .totalPurchases((long) userIds.size())
-	                .userIds(userIds)
-	                .build();
-	    }).toList();
+			return SubscriptionAnalyticsDto.builder()
+					.subId(sub.getSubId())
+					.subName(sub.getSubName())
+					.price(sub.getPrice())
+					.totalPurchases((long) userIds.size())
+					.userIds(userIds).build();
+		}).toList();
 	}
-
-
+	
+	
 
 	public List<UserProfileDto> getAllUsers(Pageable pageable) {
-		
+
 		Page<Users> users = userRepository.findAll(pageable);
-		
-		if(users.isEmpty()) {
+
+		if (users.isEmpty()) {
 			throw new ResourceNotFoundException("Users Not Found");
 		}
-		
+
 //		return users
 //		        .stream()
 //		        .map(user -> UserProfileDto.builder()
@@ -511,56 +529,109 @@ public List<DailyActivityPercentageDto> getLast7DaysActivityPercentage(String us
 //		                .guardianPhoneNo(user.getGuardianPhoneNo())
 //		                .build())
 //		        .toList();
-		
-		return users.stream()
-				.sorted(Comparator.comparing(Users::getName).reversed())
-				.map(user -> {
-					UserProfileDto dto = new UserProfileDto();
-					dto.setUserId(user.getId());
-					dto.setName(user.getName());
-					dto.setEmail(user.getEmail());
-					dto.setAge(user.getAge());
-					dto.setGender(user.getGender());
-					dto.setPrimaryRole(user.getPrimaryRole());
-					dto.setWakeUpTime(user.getWakeUpTime());
-					dto.setPhoneNo(user.getPhoneNo());
-					dto.setGuardianName(user.getGuardianName());
-					dto.setGuardianPhoneNo(user.getGuardianPhoneNo());
-					
-					return dto;
-					
-					
-				})
-				.toList();
+
+		return users.stream().sorted(Comparator.comparing(Users::getName).reversed()).map(user -> {
+			UserProfileDto dto = new UserProfileDto();
+			dto.setUserId(user.getId());
+			dto.setName(user.getName());
+			dto.setEmail(user.getEmail());
+			dto.setAge(user.getAge());
+			dto.setGender(user.getGender());
+			dto.setPrimaryRole(user.getPrimaryRole());
+			dto.setWakeUpTime(user.getWakeUpTime());
+			dto.setPhoneNo(user.getPhoneNo());
+			dto.setGuardianName(user.getGuardianName());
+			dto.setGuardianPhoneNo(user.getGuardianPhoneNo());
+
+			return dto;
+
+		}).toList();
 	}
-
-
+	
+	
 
 	public List<AdminConsultationResponseDto> getConsultants(Pageable pageable) {
-		
+
 		List<ConsultationBooking> bookings = consultationBookingRepo
 				.findByPaymentStatusOrderByCreatedAtDesc(PaymentStatus.SUCCESSFUL, pageable);
-		
+
 		return bookings.stream()
-				.map(booking -> AdminConsultationResponseDto.builder()
-		                .bookingId(booking.getId())
-		                .userId(booking.getUser().getId())
-		                .userName(booking.getUser().getName())
-		                .userAge(booking.getUser().getAge())
-		                .userGender(booking.getUser().getGender())
-		                .registeredPhone(booking.getUser().getPhoneNo()) 
-		                .whatsappNumber(booking.getWhatsappNumber())    
-		                .occupation(booking.getOccupation())
-		                .city(booking.getCity())
-		                .difficulties(booking.getDifficulties().stream().map(Enum::name).toList())
-		                .duration(booking.getDuration().name())
-		                .amountPaid(booking.getAmount())
-		                .bookedAt(booking.getCreatedAt())
-		                .adminInteracted(booking.getAdminInteracted())
-		                .build()
-		             )
+				.map(booking -> AdminConsultationResponseDto.builder().bookingId(booking.getId())
+						.userId(booking.getUser().getId()).userName(booking.getUser().getName())
+						.userAge(booking.getUser().getAge()).userGender(booking.getUser().getGender())
+						.registeredPhone(booking.getUser().getPhoneNo()).whatsappNumber(booking.getWhatsappNumber())
+						.occupation(booking.getOccupation()).city(booking.getCity())
+						.difficulties(booking.getDifficulties().stream().map(Enum::name).toList())
+						.duration(booking.getDuration().name()).amountPaid(booking.getAmount())
+						.bookedAt(booking.getCreatedAt()).adminInteracted(booking.getAdminInteracted()).build())
 				.toList();
 	}
 
 	
+	
+	public String updateFee(Integer newFee) {
+
+		AppConfiguration appConfiguration = appConfigurationRepo.findById("CONSULTATION_FEE")
+				.orElse(new AppConfiguration());
+
+		appConfiguration.setConfigKey("CONSULTATION_FEE");
+		appConfiguration.setConfigValue(String.valueOf(newFee));
+		appConfiguration.setDescription("dynamic consultation fee");
+
+		appConfigurationRepo.save(appConfiguration);
+
+		return "Fee updated Succesfully";
+
+	}
+	
+	
+	
+
+	public String markAsConsulted(Long bookingId) {
+
+		ConsultationBooking booking = consultationBookingRepo.findById(bookingId).orElseThrow(
+				() -> new ResourceNotFoundException("Booking Id not Found to mark as Consult: " + bookingId));
+
+		if (booking.getAdminInteracted() == true) {
+			throw new BadRequestException("Already marked as Interacted");
+		}
+		
+		if(!booking.getPaymentStatus().equals(PaymentStatus.SUCCESSFUL)) {
+			throw new ConflictException("Only payment success booking can marked as consulted");
+		}
+
+		booking.setAdminInteracted(true);
+		consultationBookingRepo.save(booking);
+
+		log.info("Booking {} marked as admin Interacted", bookingId);
+
+		return "Booking marked as Consulted";
+	}
+
+
+
+
+	public List<PlanUsersResponseDto> getUsersByPlan(List<String> userIds) {
+		
+		List<Users> users = userRepository.findByIdIn(userIds);
+		
+		if(users.isEmpty()) {
+			throw new ResourceNotFoundException("No user's Found in this Plan");
+		}
+		
+		
+		return users.stream()
+				.map(user -> PlanUsersResponseDto.builder()
+						.userId(user.getId())
+						.name(user.getName())
+						.email(user.getEmail())
+						.phoneNo(user.getPhoneNo())
+						.role(user.getRole())
+						.gender(user.getGender())
+						.build())
+				.toList();
+
+		
+	}
+
 }

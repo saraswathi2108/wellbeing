@@ -19,12 +19,16 @@ import com.wellbeing.dto.ConsultationVerifyDto;
 import com.wellbeing.entity.ConsultationBooking;
 import com.wellbeing.entity.PaymentStatus;
 import com.wellbeing.entity.Users;
+import com.wellbeing.repository.AppConfigurationRepo;
 import com.wellbeing.repository.ConsultationBookingRepo;
 import com.wellbeing.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConsultationService {
@@ -32,15 +36,24 @@ public class ConsultationService {
 	private final UserRepository userRepository;
 	private final RazorpayClient razorpayClient;
 	private final ConsultationBookingRepo consultationBookingRepo;
+	private final AppConfigurationRepo appConfigurationRepo;
 	
 	
-	private final Integer CONSULTATION_FEE = 500;
 	
 	@Value("${razor.key.id}")
 	private String keyId;
 	
 	@Value("${razor.key.secret}")
 	private String secretKey;
+	
+	
+	
+	private Integer getDynamicConsultationFee() {
+        return appConfigurationRepo.findById("CONSULTATION_FEE")
+                .map(config -> Integer.parseInt(config.getConfigValue()))
+                .orElse(500);
+    }
+	
 
 	
 	@Transactional
@@ -49,9 +62,10 @@ public class ConsultationService {
 		Users users = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User Not Found with Id: "+ userId));
 		
+		Integer dynamicFee = getDynamicConsultationFee();
 		
 		JSONObject options = new JSONObject();
-        options.put("amount", CONSULTATION_FEE * 100);
+        options.put("amount", dynamicFee * 100);
         options.put("currency", "INR");
         options.put("receipt", "CONS_" + userId + "_" + System.currentTimeMillis());
 		
@@ -69,7 +83,7 @@ public class ConsultationService {
         
         booking.setPaymentStatus(PaymentStatus.PENDING);
         booking.setRazorpayOrderId(order.get("id"));
-        booking.setAmount(CONSULTATION_FEE);
+        booking.setAmount(dynamicFee);
         booking.setCreatedAt(LocalDateTime.now());
         
         ConsultationBooking savedBooking = consultationBookingRepo.save(booking);
@@ -77,7 +91,7 @@ public class ConsultationService {
 		return ConsultationOrderResponseDto.builder()
 				.bookingId(savedBooking.getId())
 				.razorpayOrderId(savedBooking.getRazorpayOrderId())
-				.amount(CONSULTATION_FEE)
+				.amount(dynamicFee)
 				.keyId(keyId)
 				.build();
 	}

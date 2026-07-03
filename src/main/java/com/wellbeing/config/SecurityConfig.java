@@ -27,6 +27,8 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final OAuth2LoginSuccessHandler aoutSuccessHandler;
+    
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -69,6 +71,12 @@ public class SecurityConfig {
                             "/api/banner/**"
 
             		).permitAll()
+            		
+            		.requestMatchers(
+            				"/api/auth/**", 
+            				"/login/oauth2/**", 
+            				"/oauth2/**")
+            		.permitAll()
 
                 .anyRequest().authenticated()
 
@@ -76,6 +84,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+            
+            
+            .oauth2Login(oauth2 -> oauth2
+            		.successHandler(aoutSuccessHandler))
+            
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
