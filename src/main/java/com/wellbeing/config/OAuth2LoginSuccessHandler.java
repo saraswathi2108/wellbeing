@@ -40,7 +40,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	private final UserSubscriptionRepository userSubscriptionRepository;
 	
 	
-	private final String FRONTEND_REDIRECT_URL = "http://localhost:8081/oauth2/redirect?token=";
+	private final String FRONTEND_REDIRECT_URL = "https://digital-57o6.onrender.com/oauth2/redirect?token=";
 	
 
 	@Override
