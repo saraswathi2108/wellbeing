@@ -550,10 +550,10 @@ public class UserService {
 	
 	
 
-	public List<AdminConsultationResponseDto> getConsultants(Pageable pageable) {
+	public List<AdminConsultationResponseDto> getConsultants(Pageable pageable, Boolean interacted) {
 
 		List<ConsultationBooking> bookings = consultationBookingRepo
-				.findByPaymentStatusOrderByCreatedAtDesc(PaymentStatus.SUCCESSFUL, pageable);
+				.findByAdminInteractedAndPaymentStatusOrderByCreatedAtDesc(interacted ,PaymentStatus.SUCCESSFUL, pageable);
 
 		return bookings.stream()
 				.map(booking -> AdminConsultationResponseDto.builder().bookingId(booking.getId())

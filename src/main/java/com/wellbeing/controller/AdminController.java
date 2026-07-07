@@ -88,11 +88,12 @@ public class AdminController {
     @GetMapping("/getConsultations")
     public List<AdminConsultationResponseDto> getConsultations(
     							@RequestParam (defaultValue = "0") int page,
-    							@RequestParam (defaultValue = "10") int size){
+    							@RequestParam (defaultValue = "10") int size,
+    							@RequestParam(defaultValue = "false") Boolean interacted){
     	
     	Pageable pageable = PageRequest.of(page, size);
     	
-    	return userService.getConsultants(pageable);
+    	return userService.getConsultants(pageable, interacted);
     }
     
     

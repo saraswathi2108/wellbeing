@@ -12,6 +12,6 @@ import com.wellbeing.entity.PaymentStatus;
 @Repository
 public interface ConsultationBookingRepo extends JpaRepository<ConsultationBooking, Long> {
 
-	List<ConsultationBooking> findByPaymentStatusOrderByCreatedAtDesc(PaymentStatus successful, Pageable pageable);
+	List<ConsultationBooking> findByAdminInteractedAndPaymentStatusOrderByCreatedAtDesc(Boolean interacted, PaymentStatus successful, Pageable pageable);
 
 }
