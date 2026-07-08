@@ -199,4 +199,16 @@ public class AuthService {
 		log.info("password has been reset successfully");
 		return "Password updated successfully for User: "+ user.getEmail();
 	}
+
+
+	public String deactivateAccount(String email) {
+		
+		Users user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("User Not found to delete account"));
+		
+		user.setIs_active(false);
+		userRepository.save(user);
+		
+		return "account deleted Succesfully";
+	}
 }

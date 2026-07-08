@@ -79,9 +79,9 @@ public class UserService {
 	@Transactional
 	public String addActivity(ActivityAddDto activityAddDto, String userId) {
 		
-		if (activityRepository.findByActivityName(activityAddDto.getActivityName()).isPresent()) {
-		    throw new ConflictException("Activity already exists");
-		}
+//		if (activityRepository.findByActivityName(activityAddDto.getActivityName()).isPresent()) {
+//		    throw new ConflictException("Activity already exists");
+//		}
 		
 		Users user = userRepository.findById(userId)
 		        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));

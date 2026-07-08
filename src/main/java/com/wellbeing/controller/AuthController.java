@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.wellbeing.ExceptionHandler.ConflictException;
 import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.ChangePasswordDTO;
 import com.wellbeing.dto.LoginDto;
@@ -59,6 +60,10 @@ public class AuthController {
 
 	        Users user = userRepository.findByEmail(dto.getEmail())
 	                .orElseThrow(() -> new ResourceNotFoundException("User not found after successful authentication"));
+	        
+	        if(user.getIs_active().equals(false)) {
+	        	throw new ConflictException("You are account is in Inactive mode.");
+	        }
 
 	        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByUserId(user.getId());
 	        
@@ -144,6 +149,13 @@ public class AuthController {
     	
     	String userId = currentUser.getId();
     	return authService.changePassword(changePasswordDTO, userId);
+    }
+    
+    
+    @PutMapping("/delete")
+    public String deactivateAccount(@RequestParam String email) {
+    	
+    	return authService.deactivateAccount(email);
     }
 
 }

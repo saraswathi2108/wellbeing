@@ -35,8 +35,6 @@ public class Users {
 	private LocalDateTime wakeUpTime;
 	private TimeZone timeZone;
 	private LocalDateTime createdAt;
-//	@Column(nullable = true)
-//	private Boolean trialUsed = false;
 
 	@OneToMany(mappedBy = "user")
 	private List<UserSubscription> userSubscriptions;
@@ -44,4 +42,6 @@ public class Users {
 	private String phoneNo;
 	private String guardianName;
 	private String guardianPhoneNo;
+	
+	private Boolean is_active;
 }
