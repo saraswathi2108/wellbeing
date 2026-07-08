@@ -62,7 +62,7 @@ public class AuthController {
 	                .orElseThrow(() -> new ResourceNotFoundException("User not found after successful authentication"));
 	        
 	        if(user.getIs_active().equals(false)) {
-	        	throw new ConflictException("You are account is in Inactive mode.");
+	        	throw new ConflictException("You're account has been deleted");
 	        }
 
 	        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByUserId(user.getId());
