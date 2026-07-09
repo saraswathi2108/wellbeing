@@ -7,6 +7,7 @@ import com.wellbeing.dto.PlanUsersResponseDto;
 import com.wellbeing.dto.SubscriptionAnalyticsDto;
 import com.wellbeing.dto.SubscriptionRequest;
 import com.wellbeing.dto.SubscriptionResponse;
+import com.wellbeing.dto.SubscriptionUpdateReqDTO;
 import com.wellbeing.dto.UserProfileDto;
 import com.wellbeing.entity.Users;
 import com.wellbeing.service.SubscriptionService;
@@ -38,9 +39,26 @@ public class AdminController {
                 subscriptionService
                         .createSubscription(request));
     }
-    @GetMapping("allSubscriptions")
-    public ResponseEntity<List<SubscriptionResponse>> getAllSubscriptions() {
-        return ResponseEntity.ok(subscriptionService.getAllSubscriptions());
+    @GetMapping("getByStatus")
+    public ResponseEntity<List<SubscriptionResponse>> getByStatus(
+    							@RequestParam (defaultValue = "true") Boolean status) {
+        return ResponseEntity.ok(subscriptionService.getByStatus(status));
+    }
+    
+    
+    @PutMapping("/changeStatus")
+    public String changeStatus(@RequestParam String subId,
+    							@RequestParam Boolean status) {
+    	
+    	return subscriptionService.changeStatus(subId, status);
+    }
+    
+    
+    @PutMapping("/updateSubscription")
+    public String updateSubscription(@RequestParam String subId,
+    								@RequestBody SubscriptionUpdateReqDTO dto) {
+    	
+    	return subscriptionService.updateSub(subId, dto);
     }
 
 

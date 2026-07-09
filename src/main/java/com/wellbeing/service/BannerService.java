@@ -1,6 +1,7 @@
 package com.wellbeing.service;
 
 
+import com.wellbeing.ExceptionHandler.ResourceNotFoundException;
 import com.wellbeing.dto.BannerRequest;
 import com.wellbeing.dto.BannerResponse;
 import com.wellbeing.entity.Banner;
@@ -39,11 +40,40 @@ public class BannerService {
         return response;
     }
 
-    public List<BannerResponse> getAllBanners() {
+    public List<BannerResponse> getByStatus(Boolean status) {
 
-        return bannerRepository.findAll()
+        return bannerRepository.findByStatus(status)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
+
+	public String updatebanner(String bannerId, BannerRequest bannerRequest) {
+		
+		Banner banner = bannerRepository.findById(bannerId)
+				.orElseThrow(() -> new ResourceNotFoundException("Banner Not Found to Delete"));
+		
+		if(bannerRequest.getName() != null) {
+			banner.setName(bannerRequest.getName());
+		}
+		
+		if(bannerRequest.getDescription() != null) {
+			banner.setDescription(bannerRequest.getDescription());
+		}
+		
+		bannerRepository.save(banner);
+
+		return "Banner updated succesfully";
+	}
+
+	public String changeStatus(String bannerId, Boolean status) {
+		
+		Banner banner = bannerRepository.findById(bannerId)
+				.orElseThrow(() -> new ResourceNotFoundException("Banner Not Found to Update status"));
+		
+		banner.setStatus(status);
+		bannerRepository.save(banner);
+
+		return "Banner status updated Successfuly: "+status;
+	}
 }

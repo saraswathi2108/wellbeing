@@ -6,6 +6,7 @@ import com.wellbeing.ExceptionHandler.UnauthorizedException;
 import com.wellbeing.config.SecurityUtil;
 import com.wellbeing.dto.SubscriptionRequest;
 import com.wellbeing.dto.SubscriptionResponse;
+import com.wellbeing.dto.SubscriptionUpdateReqDTO;
 import com.wellbeing.entity.Subscription;
 import com.wellbeing.entity.UserSubscription;
 import com.wellbeing.entity.UserSubscriptionStatus;
@@ -65,9 +66,9 @@ public class SubscriptionService {
 
     }
 
-    public List<SubscriptionResponse> getAllSubscriptions() {
+    public List<SubscriptionResponse> getByStatus(Boolean status) {
 
-        return subscriptionRepository.findAll()
+        return subscriptionRepository.findByStatus(status)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -139,6 +140,43 @@ public class SubscriptionService {
 
 
     }
+
+	public String changeStatus(String subId, Boolean status) {
+		
+		Subscription subscription = subscriptionRepository.findById(subId)
+				.orElseThrow(() -> new ResourceNotFoundException("Subscription Not Found to change Status"));
+
+		subscription.setStatus(status);
+		subscriptionRepository.save(subscription);
+
+		return "Subscription Status changed succesfully to: "+ status;
+	}
+
+	public String updateSub(String subId, SubscriptionUpdateReqDTO dto) {
+		
+		Subscription subscription = subscriptionRepository.findById(subId)
+				.orElseThrow(() -> new ResourceNotFoundException("Subscription Not found to update"));
+		
+		if(dto.getDurationDays() != null) {
+			subscription.setDurationDays(dto.getDurationDays());
+		}
+		
+		if(dto.getPrice() != null) {
+			subscription.setPrice(dto.getPrice());
+		}
+		
+		if(dto.getSubDescription() != null) {
+			subscription.setSubDescription(dto.getSubDescription());
+		}
+		
+		if(dto.getSubName() != null) {
+			subscription.setSubName(dto.getSubName());
+		}
+		
+		subscriptionRepository.save(subscription);
+
+		return "Subscription updated succesfully";
+	}
 
 
 

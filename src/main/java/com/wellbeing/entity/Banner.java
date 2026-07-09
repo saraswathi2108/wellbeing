@@ -18,6 +18,8 @@ public class Banner {
 
     @Column(name = "description", columnDefinition = "TEXT",length = 2000)
     private String description;
+    
+    private Boolean status;
 
     }
 

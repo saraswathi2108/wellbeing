@@ -1,6 +1,7 @@
 package com.wellbeing.entity;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.TimeZone;
@@ -32,7 +33,7 @@ public class Users {
     @Enumerated(EnumType.STRING)
 	private PrimaryRole primaryRole;
 
-	private LocalDateTime wakeUpTime;
+	private LocalTime wakeUpTime;
 	private TimeZone timeZone;
 	private LocalDateTime createdAt;
 

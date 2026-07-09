@@ -1,6 +1,7 @@
 package com.wellbeing.config;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.TimeZone;
 
 import org.springframework.boot.CommandLineRunner;
@@ -38,7 +39,7 @@ public class AdminInitializer implements CommandLineRunner {
 			users.setAge(10);
 			users.setGender("male");
 			users.setRole("ADMIN");
-			users.setWakeUpTime(LocalDateTime.now());
+			users.setWakeUpTime(LocalTime.now());
 			users.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
 			users.setCreatedAt(LocalDateTime.now());
 			

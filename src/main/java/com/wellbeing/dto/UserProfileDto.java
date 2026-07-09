@@ -1,6 +1,7 @@
 package com.wellbeing.dto;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.TimeZone;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -29,7 +30,7 @@ public class UserProfileDto {
     @Enumerated(EnumType.STRING)
 	private PrimaryRole primaryRole;
 
-	private LocalDateTime wakeUpTime;
+	private LocalTime wakeUpTime;
 	private TimeZone timeZone;
 	private String phoneNo;
 	private String guardianName;
