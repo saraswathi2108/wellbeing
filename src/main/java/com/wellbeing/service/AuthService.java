@@ -12,9 +12,12 @@ import com.wellbeing.entity.Otp;
 import com.wellbeing.entity.UserSubscription;
 import com.wellbeing.entity.UserSubscriptionStatus;
 import com.wellbeing.entity.Users;
+import com.wellbeing.entity.WellbeingScore;
 import com.wellbeing.repository.OtpRepository;
 import com.wellbeing.repository.UserRepository;
 import com.wellbeing.repository.UserSubscriptionRepository;
+import com.wellbeing.repository.WellBeingScoreRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,8 +41,9 @@ public class AuthService {
     private final OtpRepository otpRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final EmailService emailService; // Inject EmailService
+    private final EmailService emailService;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final WellBeingScoreRepository wellBeingScoreRepository;
 
     public String sendRegistrationOtp(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
@@ -98,6 +102,7 @@ public class AuthService {
         user.setRole("USER");
         user.setAge(dto.getAge());
         user.setGender(dto.getGender());
+        user.setIs_active(true);
         user.setPrimaryRole(dto.getRole());
         user.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
         user.setWakeUpTime(dto.getWakeUpTime());
@@ -107,8 +112,17 @@ public class AuthService {
         user.setGuardianPhoneNo(dto.getGuardianPhoneNo());
 
         userRepository.save(user);
+        
+        Long scoreCount = wellBeingScoreRepository.count() + 1;
+        WellbeingScore initialScore = new WellbeingScore();
+        initialScore.setWellScoreId(String.format("WELLBEING%05d", scoreCount));
+        initialScore.setUser(user);
+        initialScore.setCurrentScore(100);
+        initialScore.setUpdatedAt(LocalDateTime.now());
+        
+        wellBeingScoreRepository.save(initialScore);
 
-        return "User created successfully";
+        return "User created successfully with default Wellbeing score of 100";
     }
 
 

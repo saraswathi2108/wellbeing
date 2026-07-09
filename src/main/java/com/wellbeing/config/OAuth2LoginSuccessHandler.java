@@ -16,8 +16,10 @@ import com.wellbeing.entity.PrimaryRole;
 import com.wellbeing.entity.UserSubscription;
 import com.wellbeing.entity.UserSubscriptionStatus;
 import com.wellbeing.entity.Users;
+import com.wellbeing.entity.WellbeingScore;
 import com.wellbeing.repository.UserRepository;
 import com.wellbeing.repository.UserSubscriptionRepository;
+import com.wellbeing.repository.WellBeingScoreRepository;
 import com.wellbeing.service.CustomUserDetails;
 import com.wellbeing.service.JwtService;
 
@@ -38,6 +40,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	private final UserRepository userRepository;
 	private final JwtService jwtService;
 	private final UserSubscriptionRepository userSubscriptionRepository;
+	private final WellBeingScoreRepository wellBeingScoreRepository;
 	
 	
 	private final String FRONTEND_REDIRECT_URL = "https://digital-57o6.onrender.com/oauth2/redirect?token=";
@@ -71,7 +74,19 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     newUser.setRole("USER"); // Default role
                     newUser.setCreatedAt(LocalDateTime.now());
                     
-                    return userRepository.save(newUser);
+                    Users savedUser = userRepository.save(newUser);
+                    
+                    Long scoreCount = wellBeingScoreRepository.count() + 1;
+                    
+                    WellbeingScore initialScore = new WellbeingScore();
+                    initialScore.setWellScoreId(String.format("WELLBEING%05d", scoreCount));
+                    initialScore.setUser(savedUser); 
+                    initialScore.setCurrentScore(100);
+                    initialScore.setUpdatedAt(LocalDateTime.now());
+                    
+                    wellBeingScoreRepository.save(initialScore);
+                    
+                    return savedUser;
                     
         		});
         
