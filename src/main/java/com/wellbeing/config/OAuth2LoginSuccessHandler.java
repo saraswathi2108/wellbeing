@@ -43,7 +43,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	private final WellBeingScoreRepository wellBeingScoreRepository;
 	
 	
-	private final String FRONTEND_REDIRECT_URL = "https://digital-57o6.onrender.com/oauth2/redirect?token=";
+//	private final String FRONTEND_REDIRECT_URL = "https://digital-57o6.onrender.com/oauth2/redirect?token=";
+	
+	private final String FRONTEND_REDIRECT_URL = "nnnn://oauth2/redirect?token=";
 	
 
 	@Override
