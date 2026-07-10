@@ -15,7 +15,7 @@ public class UserRegisterDTO {
     private Integer age;
     private String gender;
     private PrimaryRole role;
-    private  String Others;
+    private String OtherRole;
     private LocalTime wakeUpTime;
     private String phoneNo;
     private String guardianName;

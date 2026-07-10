@@ -9,6 +9,7 @@ import com.wellbeing.dto.ResetPasswordDTO;
 import com.wellbeing.dto.UserRegisterDTO;
 import com.wellbeing.dto.VerifyOtpDTO;
 import com.wellbeing.entity.Otp;
+import com.wellbeing.entity.PrimaryRole;
 import com.wellbeing.entity.UserSubscription;
 import com.wellbeing.entity.UserSubscriptionStatus;
 import com.wellbeing.entity.Users;
@@ -104,6 +105,11 @@ public class AuthService {
         user.setGender(dto.getGender());
         user.setIs_active(true);
         user.setPrimaryRole(dto.getRole());
+        
+        if (dto.getRole() == PrimaryRole.OTHER) {
+            user.setOtherRole(dto.getOtherRole()); 
+        }
+        
         user.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
         user.setWakeUpTime(dto.getWakeUpTime());
         user.setCreatedAt(LocalDateTime.now());

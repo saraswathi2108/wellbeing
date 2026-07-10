@@ -32,6 +32,7 @@ public class Users {
 
     @Enumerated(EnumType.STRING)
 	private PrimaryRole primaryRole;
+    private String otherRole;
 
 	private LocalTime wakeUpTime;
 	private TimeZone timeZone;

@@ -352,6 +352,7 @@ public class UserService {
 				.age(users.getAge())
 				.gender(users.getGender())
 				.primaryRole(users.getPrimaryRole())
+				.otherRole(users.getOtherRole())
 				.wakeUpTime(users.getWakeUpTime())
 				.timeZone(users.getTimeZone())
 				.phoneNo(users.getPhoneNo())
@@ -379,9 +380,19 @@ public class UserService {
 		if (dto.getGender() != null) {
 			user.setGender(dto.getGender());
 		}
+		
 		if (dto.getPrimaryRole() != null) {
 			user.setPrimaryRole(dto.getPrimaryRole());
 		}
+		
+		if (user.getPrimaryRole() == PrimaryRole.OTHER) {
+            if (dto.getOtherRole() != null) {
+                user.setOtherRole(dto.getOtherRole());
+            }
+        } else {
+            user.setOtherRole(null); 
+        }
+		
 		if (dto.getWakeUpTime() != null) {
 			user.setWakeUpTime(dto.getWakeUpTime());
 		}
