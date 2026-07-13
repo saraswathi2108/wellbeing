@@ -292,6 +292,7 @@ public class UserService {
 				.stream()
 				.map(log -> ActivityLogResponseDto.builder()
 						.activityLogId(log.getId())
+						.activityId(log.getActivity().getId())	
 						.activityName(log.getActivity().getActivityName())
 						.activityType(log.getActivity().getActivityType().name())
 						.scoreChange(log.getScoreChange())

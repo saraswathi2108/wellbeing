@@ -29,6 +29,18 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    
+    
+    private Integer calculateFinalPrice(Integer price, Integer discountPercentage) {
+        if (price == null || price == 0) return 0;
+        
+        if (discountPercentage == null || discountPercentage <= 0) {
+            return price; 
+        }
+        
+        Integer discountAmount = (price * discountPercentage) / 100;
+        return price - discountAmount;
+    }
 
     public SubscriptionResponse createSubscription(
             SubscriptionRequest request) {
@@ -46,6 +58,10 @@ public class SubscriptionService {
         subscription.setDurationDays(request.getDurationDays());
         subscription.setStatus(true);
         subscription.setTrialPlan(request.getTrialPlan());
+        
+        Integer discount = request.getDiscountPercentage() != null ? request.getDiscountPercentage() : 0;
+        subscription.setDiscountPercentage(discount);
+        subscription.setFinalPrice(calculateFinalPrice(request.getPrice(), discount));
 
         Subscription saved =
                 subscriptionRepository.save(subscription);
@@ -54,12 +70,16 @@ public class SubscriptionService {
     }
 
     private SubscriptionResponse mapToResponse(Subscription saved) {
+    	
+    	Integer discountAmt = saved.getPrice() - saved.getFinalPrice();
 
         SubscriptionResponse subscriptionResponse = new SubscriptionResponse();
         subscriptionResponse.setSubId(saved.getSubId());
         subscriptionResponse.setSubName(saved.getSubName());
         subscriptionResponse.setSubDescription(saved.getSubDescription());
         subscriptionResponse.setPrice(saved.getPrice());
+        subscriptionResponse.setFinalPrice(saved.getFinalPrice());
+        subscriptionResponse.setDiscountAmount(discountAmt);
         subscriptionResponse.setDurationDays(saved.getDurationDays());
         subscriptionResponse.setStatus(saved.getStatus());
         return subscriptionResponse;
@@ -172,6 +192,26 @@ public class SubscriptionService {
 		if(dto.getSubName() != null) {
 			subscription.setSubName(dto.getSubName());
 		}
+		
+		boolean priceOrDiscountChanged = false;
+        
+        if (dto.getPrice() != null) {
+            subscription.setPrice(dto.getPrice());
+            priceOrDiscountChanged = true;
+        }
+        
+        if (dto.getDiscountPercentage() != null) {
+        	subscription.setDiscountPercentage(dto.getDiscountPercentage());
+            priceOrDiscountChanged = true;
+        }
+
+        if (priceOrDiscountChanged) {
+        	subscription.setFinalPrice(
+                calculateFinalPrice(subscription.getPrice(), subscription.getDiscountPercentage())
+            );
+        }
+
+        Subscription updatedSub = subscriptionRepository.save(subscription);
 		
 		subscriptionRepository.save(subscription);
 

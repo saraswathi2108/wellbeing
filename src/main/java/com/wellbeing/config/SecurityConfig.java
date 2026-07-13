@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
-    private final OAuth2LoginSuccessHandler aoutSuccessHandler;
+//    private final OAuth2LoginSuccessHandler aoutSuccessHandler;
     
 
     @Bean
@@ -86,8 +86,8 @@ public class SecurityConfig {
             )
             
             
-            .oauth2Login(oauth2 -> oauth2
-            		.successHandler(aoutSuccessHandler))
+//            .oauth2Login(oauth2 -> oauth2
+//            		.successHandler(aoutSuccessHandler))
             
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

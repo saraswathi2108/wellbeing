@@ -18,6 +18,12 @@ public class Subscription {
     private String subName;
     private String subDescription;
     private Integer price;
+    
+    @Column(columnDefinition = "integer default 0")
+    private Integer discountPercentage; 
+    
+    private Integer finalPrice;
+    
     private Boolean status;
     private Integer durationDays;
     @Column(nullable = false)

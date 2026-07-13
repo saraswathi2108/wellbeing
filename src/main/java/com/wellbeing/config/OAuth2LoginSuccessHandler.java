@@ -73,6 +73,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     newUser.setId(userId);
                     newUser.setEmail(email);
                     newUser.setName(name);
+                    newUser.setIs_active(true);
                     newUser.setRole("USER"); // Default role
                     newUser.setCreatedAt(LocalDateTime.now());
                     
