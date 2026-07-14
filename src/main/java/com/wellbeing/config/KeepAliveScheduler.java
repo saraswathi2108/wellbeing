@@ -15,7 +15,7 @@ public class KeepAliveScheduler {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String myUrl = "https://wellbeing-fw2o.onrender.com/api/admin/allSubscriptions";
+    private final String myUrl = "https://wellbeing-fw2o.onrender.com/api/admin/getByStatus?status=true";
 
     @Scheduled(fixedRate = 600000)
     public void keepAlive() {
