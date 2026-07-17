@@ -136,4 +136,11 @@ public class AdminController {
     	
     	return userService.getUsersByPlan(userIds);
     }
+    
+    
+    @GetMapping("/hello")
+    public String hello() {
+    	return "hello";
+    }
+    
 }
