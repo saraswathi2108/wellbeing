@@ -14,6 +14,8 @@ import com.wellbeing.service.SubscriptionService;
 import com.wellbeing.service.UserService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+
+@Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -140,6 +144,7 @@ public class AdminController {
     
     @GetMapping("/hello")
     public String hello() {
+    	log.info("schedular form controller");
     	return "hello";
     }
     
